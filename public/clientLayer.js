@@ -1,6 +1,8 @@
 var camReference;
 var inGame = false;
 var playerId;
+var keyMonitor = new Map();
+var prevDir = [0, 0];
 
 function clientLayer() {
     if (inGame) {
@@ -40,5 +42,40 @@ function drawPlayers() {
         fill(plr.color);
         let dia = plr.radius * 2;
         ellipse(plr.pos[0], plr.pos[1], dia, dia);
+    }
+}
+
+function keyPressed() {
+    keyMonitor.set(key, true);
+    checkInput()
+}
+
+function keyReleased() {
+    keyMonitor.set(key, false);
+    checkInput()
+}
+
+function mousePressed() {
+    keyMonitor.set(mouseButton, true);
+    checkInput()
+}
+
+function mouseReleased() {
+    keyMonitor.set(mouseButton, false);
+    checkInput()
+}
+
+function checkInput() {
+    let newDir = [0, 0];
+    if (keyMonitor.get('a')) newDir[0]--;
+    if (keyMonitor.get('d')) newDir[0]++;
+    if (keyMonitor.get('w')) newDir[1]--;
+    if (keyMonitor.get('s')) newDir[1]++;
+    if (newDir[0] != prevDir[0] || newDir[1] != prevDir[1]) {
+        prevDir = newDir;
+        sendMessage('newdir', {
+            'id': playerId,
+            'dir': newDir
+        })
     }
 }

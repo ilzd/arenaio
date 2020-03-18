@@ -7,11 +7,16 @@ class Player {
         this.color = [255, 0, 0]; //player color
         this.radius = 40; //player radius
         this.nickname = 'Player'; //player display name
+        this.latency = 0;
     }
 
     move(deltaTime) {
         this.pos[0] += this.dir[0] * this.speed * deltaTime;
         this.pos[1] += this.dir[1] * this.speed * deltaTime;
+    }
+
+    setDir(newDir){
+        this.dir = normalizeVector(newDir);
     }
 }
 

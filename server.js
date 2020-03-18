@@ -46,6 +46,17 @@ io.sockets.on(
             game.players.push(player);
             io.emit('newplayer', player);
         });
+
+        socket.on('newdir', function(data){
+            for(let i = 0; i < game.players.length; i++){
+                if(game.players[i].id == data.id){
+                    game.players[i].setDir(data.dir);
+                    data.pos = game.players[i].pos;
+                    break;
+                }
+            }
+            io.emit('newdir', data);
+        });
     }
 );
 
@@ -60,7 +71,7 @@ var game = new Game();
 
 function update() {
     calculateDeltaTime();
-    game.update();
+    game.update(deltaTime);
 }
 
 function calculateDeltaTime(){

@@ -20,6 +20,16 @@ function registerEvents() {
             }
         }
     });
+
+    socket.on('newdir', function(data){
+        for(let i = 0; i < game.players.length; i++){
+            if(game.players[i].id == data.id){
+                game.players[i].setDir(data.dir);
+                game.players[i].pos = data.pos;
+                break;
+            }
+        }
+    });
 }
 
 function sendMessage(type, data) {
