@@ -7,7 +7,7 @@ class Player {
         this.color = [255, 0, 0]; //player color
         this.radius = 40; //player radius
         this.nickname = 'Player'; //player display name
-        this.latency = 0;
+        this.latency = 0; //player latency
     }
 
     move(deltaTime) {
@@ -15,8 +15,8 @@ class Player {
         this.pos[1] += this.dir[1] * this.speed * deltaTime;
     }
 
-    setDir(newDir){
-        this.dir = normalizeVector(newDir);
+    fixDir() {
+        this.dir = normalizeVector(this.dir);
     }
 }
 
@@ -71,11 +71,18 @@ class Game {
 
     buildPlayer(data) {
         let player = new Player();
+        this.updatePlayer(player, data);
+        return player;
+    }
+
+    updatePlayer(player, data) {
         for (let prop in player) {
             if ("undefined" != typeof (data[prop])) {
                 player[prop] = data[prop];
+                if (prop == 'dir') {
+                    player.fixDir();
+                }
             }
         }
-        return player;
     }
 }

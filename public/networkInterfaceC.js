@@ -21,14 +21,17 @@ function registerEvents() {
         }
     });
 
-    socket.on('newdir', function(data){
+    socket.on('update', function(data){
         for(let i = 0; i < game.players.length; i++){
             if(game.players[i].id == data.id){
-                game.players[i].setDir(data.dir);
-                game.players[i].pos = data.pos;
+                game.updatePlayer(game.players[i], data);
                 break;
             }
         }
+    });
+
+    socket.on('pingtest', function(){
+        socket.emit('pingtest');
     });
 }
 

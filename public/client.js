@@ -17,7 +17,12 @@ function setup() {
     socket = io();
     registerEvents();
 
-    socket.emit('joinrequest', {'color': [123, 321, 333]});
+    frameRate(999);
+
+    socket.emit('joinrequest', {
+        'color': [123, 321, 333],
+        'radius': 80
+    });
 }
 
 function draw() {
@@ -26,12 +31,7 @@ function draw() {
     adaptMouse();
     game.update(deltaTime);
 
-    push();
-    adaptScreen();
-
     clientLayer();
-
-    pop();
 
     drawBoundaries();
 }

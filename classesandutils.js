@@ -1,30 +1,30 @@
-function normalizeVector(vet){
+function normalizeVector(vet) {
     let mag = magVector(vet);
     let result = [vet[0], vet[1]];
-    if(mag > 0){
+    if (mag > 0) {
         result[0] /= mag;
         result[1] /= mag;
     }
     return result;
 }
 
-function subVector(v1, v2){
+function subVector(v1, v2) {
     return [v1[0] - v2[0], v1[1] - v2[1]];
 }
 
-function addVector(v1, v2){
+function addVector(v1, v2) {
     return [v1[0] + v2[0], v1[1] + v2[1]];
 }
 
-function multVector(vet, scalar){
+function multVector(vet, scalar) {
     return [vet[0] * scalar, vet[1] * scalar];
 }
 
-function magVector(vet){
+function magVector(vet) {
     return Math.sqrt(vet[0] * vet[0] + vet[1] * vet[1]);
 }
 
-function distVector(v1, v2){
+function distVector(v1, v2) {
     return magVector(subVector(v2, v1));
 }
 
@@ -45,8 +45,8 @@ class Player {
         this.pos[1] += this.dir[1] * this.speed * deltaTime;
     }
 
-    setDir(newDir){
-        this.dir = normalizeVector(newDir);
+    fixDir() {
+        this.dir = normalizeVector(this.dir);
     }
 }
 
@@ -101,12 +101,19 @@ class Game {
 
     buildPlayer(data) {
         let player = new Player();
+        this.updatePlayer(player, data);
+        return player;
+    }
+
+    updatePlayer(player, data) {
         for (let prop in player) {
             if ("undefined" != typeof (data[prop])) {
                 player[prop] = data[prop];
+                if (prop == 'dir') {
+                    player.fixDir();
+                }
             }
         }
-        return player;
     }
 }
 

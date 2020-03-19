@@ -6,9 +6,15 @@ var prevDir = [0, 0];
 
 function clientLayer() {
     if (inGame) {
+        push();
+        adaptScreen();
+        push()
         positionCamera();
         drawMap();
         drawPlayers();
+        pop();
+        drawStats();
+        pop();
     }
 }
 
@@ -43,6 +49,14 @@ function drawPlayers() {
         let dia = plr.radius * 2;
         ellipse(plr.pos[0], plr.pos[1], dia, dia);
     }
+}
+
+function drawStats(){
+    fill(255, 255, 0);
+    stroke(0)
+    strokeWeight(1);
+    textSize(18);
+    text((int)(camReference.latency * 1000) + ' ms', 5, 20);
 }
 
 function keyPressed() {
