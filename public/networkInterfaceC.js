@@ -24,7 +24,7 @@ function registerEvents() {
     socket.on('update', function(data){
         for(let i = 0; i < game.players.length; i++){
             if(game.players[i].id == data.id){
-                game.updatePlayer(game.players[i], data);
+                game.updatePlayer(game.players[i], data);     
                 break;
             }
         }

@@ -65,7 +65,7 @@ io.sockets.on(
         socket.on('pingtest', function () {
             let pingResult = pingTool.testResponse(socket.id);
             if (pingResult.done) {
-                let data = {'latency': pingResult.value};
+                let data = {'id': socket.id, 'latency': pingResult.ping};
                 for (let i = 0; i < game.players.length; i++) {
                     if (game.players[i].id == socket.id) {
                         game.updatePlayer(game.players[i], data);
@@ -80,7 +80,7 @@ io.sockets.on(
 server.listen(port);
 
 setInterval(update, 1);
-setInterval(updateImportant, 1000 / 2);
+//setInterval(updateImportant, 1000 / 2);
 
 var deltaTime = 0; //variation in time since last tick
 var prevDate = Date.now(); //last date saved, used to calculate deltaTime
