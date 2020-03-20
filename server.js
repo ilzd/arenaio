@@ -30,14 +30,14 @@ io.sockets.on(
         });
 
         socket.on('joinrequest', function (data) {
-            socket.emit('joinaccept', {'id': socket.id});
+            socket.emit('joinaccept', { 'id': socket.id });
             for (let i = 0; i < game.players.length; i++) {
-                socket.emit('newplayer', game.players[i]);
+                socket.emit('newplayer', game.getPlayerData(game.players[i].id));
             }
+            data.id = socket.id;
             let player = game.buildPlayer(data);
-            player.id = socket.id;
             game.addPlayer(socket, player);
-            io.emit('newplayer', player);
+            io.emit('newplayer', game.getPlayerData(player.id));
         });
 
         socket.on('newdir', function (data) {
@@ -64,13 +64,21 @@ io.sockets.on(
         socket.on('pingtest', function () {
             let pingResult = game.pingTestResult(socket.id);
             if (pingResult.done) {
-                let data = {'id': socket.id, 'latency': pingResult.ping};
+                let data = { 'id': socket.id, 'latency': pingResult.ping };
                 for (let i = 0; i < game.players.length; i++) {
                     if (game.players[i].id == socket.id) {
                         game.updatePlayer(game.players[i], data);
                     }
                 }
                 io.emit('update', data);
+            }
+        });
+
+        socket.on('attacking', function (data) {
+            for (let i = 0; i < game.players.length; i++) {
+                if (game.players[i].id == socket.id) {
+                    game.players[i].attackIntent = data.intent;
+                }
             }
         });
     }
@@ -84,7 +92,7 @@ setInterval(updateImportant, 1000 / 2);
 var deltaTime = 0; //variation in time since last tick
 var prevDate = Date.now(); //last date saved, used to calculate deltaTime
 
-var game = new ServerGame();
+var game = new ServerGame(io);
 
 function update() {
     calculateDeltaTime();

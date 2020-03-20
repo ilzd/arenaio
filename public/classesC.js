@@ -30,10 +30,22 @@ class Player extends Mobile {
         this.nickname = 'Player'; //player display name
         this.latency = 0; //player latency
         this.aimDir = [1, 0];
+        this.attackSpeed = 20;
+        this.isAttacking = false;
+        this.attackDelay = 0;
+        this.build = {
+            'basicAttack': 0,
+        }
     }
 
     fixAimDir(){
         this.aimDir = normalizeVector(this.aimDir);
+    }
+
+    attack(deltaTime){
+        if(this.isAttacking){
+            this.attackDelay = constrainValue(this.attackDelay + deltaTime, 0, 1 / this.attackSpeed);
+        }
     }
 }
 
@@ -83,6 +95,7 @@ class Game {
         for (let i = 0; i < this.players.length; i++) {
             let plr = this.players[i];
             plr.move(deltaTime);
+            plr.attack(deltaTime);
         }
         for (let i = 0; i < this.projectiles.length; i++) {
             let proj = this.projectiles[i];
@@ -139,5 +152,13 @@ class Projectile extends Mobile {
         super();
         this.damage = 0;
         this.color = [0, 0, 0];
+        this.speed = 1200;
+        this.range = 1000;
+        this.travaledDistance = 0;
+    }
+
+    move(deltaTime){
+        super.move(deltaTime);
+        this.travaledDistance += deltaTime * this.speed;
     }
 }

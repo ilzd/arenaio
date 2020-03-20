@@ -4,6 +4,7 @@ class ClientGame extends Game {
         this.camReference;
         this.keyMonitor = new Map();
         this.prevDir = [0, 0];
+        this.prevAttacking;
     }
 
     update(deltaTime) {
@@ -44,7 +45,7 @@ class ClientGame extends Game {
     }
 
     drawProjectiles() {
-        for(let i = 0; i < this.projectiles.length; i++){
+        for (let i = 0; i < this.projectiles.length; i++) {
             this.projectiles[i].display();
         }
     }
@@ -62,9 +63,17 @@ class ClientGame extends Game {
                 'dir': newDir
             })
         }
+
+        if (this.keyMonitor.get('left') != this.prevAttacking) {
+            this.prevAttacking = this.keyMonitor.get('left');
+            sendMessage('attacking', {
+                'id': clientId,
+                'intent': this.prevAttacking
+            });
+        }
     }
 
-    checkPlayerAim(){
+    checkPlayerAim() {
         this.camReference.aimDir = [mouseX - width / 2, mouseY - height / 2];
         this.camReference.fixAimDir();
         sendMessage('newaimdir', {
@@ -111,12 +120,20 @@ class ClientPlayer extends Player {
         ellipse(this.pos[0], this.pos[1], dia, dia);
 
         fill(255)
-        strokeWeight(1);
+        strokeWeight(3);
         textAlign(CENTER, CENTER);
         textSize(20);
+
         text(this.nickname, this.pos[0], this.pos[1]);
 
+        let attackState = mapValue(this.attackDelay, 0, 1 / this.attackSpeed, this.radius, 0);
+        ellipse(this.pos[0] + this.aimDir[0] * attackState, this.pos[1] + this.aimDir[1] * attackState, this.radius * 0.3, this.radius * 0.3);
         ellipse(this.pos[0] + this.aimDir[0] * this.radius, this.pos[1] + this.aimDir[1] * this.radius, this.radius * 0.4, this.radius * 0.4);
+    }
+
+    attack(deltaTime){
+        super.attack(deltaTime);
+        if(this.attackDelay == 1 / this.attackSpeed) this.attackDelay = 0;
     }
 }
 

@@ -1,4 +1,4 @@
-const VIRTUAL_WIDTH = 1366, VIRTUAL_HEIGHT = 768; //virtual screen dimentions
+const VIRTUAL_WIDTH = 2000, VIRTUAL_HEIGHT = 1200; //virtual screen dimentions
 var scaleRatio; //relation between window dimentions and virtual screen dimentions
 var realW, realH; //real dimentions after adapting to window screen
 var realOx, realOy; //real origin coordinates after adapting to window screen
@@ -23,6 +23,7 @@ function setup() {
 
     //temp code
     socket.emit('joinrequest', {
+        'nickname': 'LzD',
         'color': [123, 0, 255],
         'radius': 50
     });
@@ -61,6 +62,14 @@ function registerEvents() {
 
     socket.on('pingtest', function () {
         socket.emit('pingtest');
+    });
+
+    socket.on('newprojectile', function (data) {
+        if (inGame) game.addProjectile(data);
+    });
+
+    socket.on('removeprojectile', function (data) {
+        if (inGame) game.removeProjectile(data.id);
     });
 }
 
