@@ -1,95 +1,134 @@
-var camReference;
-var inGame = false;
-var playerId;
-var keyMonitor = new Map();
-var prevDir = [0, 0];
+class ClientGame extends Game {
+    constructor() {
+        super();
+        this.camReference;
+        this.keyMonitor = new Map();
+        this.prevDir = [0, 0];
+    }
 
-function clientLayer() {
-    if (inGame) {
-        push();
-        adaptScreen();
-        push()
-        positionCamera();
-        drawMap();
-        drawPlayers();
-        pop();
-        drawStats();
-        pop();
+    update(deltaTime) {
+        super.update(deltaTime);
+        this.positionCamera();
+        this.drawMap();
+        this.drawPlayers();
+        this.drawProjectiles();
+        this.checkPlayerAim();
+    }
+
+    drawPlayers() {
+        for (let i = 0; i < this.players.length; i++) {
+            this.players[i].display();
+        }
+    }
+
+    positionCamera() {
+        translate(VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT / 2);
+        translate(-this.camReference.pos[0], -this.camReference.pos[1]);
+    }
+
+    drawMap() {
+        stroke(0);
+        strokeWeight(5);
+        fill(127);
+        rect(0, 0, this.mapWidth, this.mapHeight);
+
+        stroke(0, 127);
+        strokeWeight(1);
+        let xStep = this.mapWidth / 20, yStep = this.mapHeight / 20;
+        for (let i = 0; i < this.mapWidth; i += xStep) {
+            line(i, 0, i, this.mapHeight);
+        }
+        for (let i = 0; i < this.mapHeight; i += yStep) {
+            line(0, i, this.mapWidth, i);
+        }
+    }
+
+    drawProjectiles() {
+        for(let i = 0; i < this.projectiles.length; i++){
+            this.projectiles[i].display();
+        }
+    }
+
+    checkInput() {
+        let newDir = [0, 0];
+        if (this.keyMonitor.get('a')) newDir[0]--;
+        if (this.keyMonitor.get('d')) newDir[0]++;
+        if (this.keyMonitor.get('w')) newDir[1]--;
+        if (this.keyMonitor.get('s')) newDir[1]++;
+        if (newDir[0] != this.prevDir[0] || newDir[1] != this.prevDir[1]) {
+            this.prevDir = newDir;
+            sendMessage('newdir', {
+                'id': clientId,
+                'dir': newDir
+            })
+        }
+    }
+
+    checkPlayerAim(){
+        this.camReference.aimDir = [mouseX - width / 2, mouseY - height / 2];
+        this.camReference.fixAimDir();
+        sendMessage('newaimdir', {
+            'id': clientId,
+            'aimDir': this.camReference.aimDir
+        });
+    }
+
+    buildPlayer(data) {
+        let player = new ClientPlayer();
+        this.updatePlayer(player, data);
+        return player;
+    }
+
+    addPlayer(data) {
+        this.players.push(this.buildPlayer(data));
+        if (data.id == clientId) {
+            this.camReference = this.players[this.players.length - 1];
+            this.inGame = true;
+        }
+    }
+
+    buildProjectile(data) {
+        let proj = new ClientProjectile();
+        this.updateProjectile(proj, data);
+        return proj;
+    }
+
+    addProjectile(data) {
+        this.projectiles.push(this.buildProjectile(data));
     }
 }
 
-function positionCamera() {
-    translate(VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT / 2);
-    translate(-camReference.pos[0], -camReference.pos[1]);
-}
-
-function drawMap() {
-    stroke(0);
-    strokeWeight(5);
-    fill(127);
-    rect(0, 0, game.mapWidth, game.mapHeight);
-
-    stroke(0, 127);
-    strokeWeight(1);
-    let xStep = game.mapWidth / 20, yStep = game.mapHeight / 20;
-    for (let i = 0; i < game.mapWidth; i += xStep) {
-        line(i, 0, i, game.mapHeight);
+class ClientPlayer extends Player {
+    constructor() {
+        super();
     }
-    for (let i = 0; i < game.mapHeight; i += yStep) {
-        line(0, i, game.mapWidth, i);
-    }
-}
 
-function drawPlayers() {
-    stroke(0);
-    strokeWeight(2);
-    for (let i = 0; i < game.players.length; i++) {
-        let plr = game.players[i];
-        fill(plr.color);
-        let dia = plr.radius * 2;
-        ellipse(plr.pos[0], plr.pos[1], dia, dia);
+    display() {
+        stroke(0);
+        strokeWeight(2);
+        fill(this.color);
+        let dia = this.radius * 2;
+        ellipse(this.pos[0], this.pos[1], dia, dia);
+
+        fill(255)
+        strokeWeight(1);
+        textAlign(CENTER, CENTER);
+        textSize(20);
+        text(this.nickname, this.pos[0], this.pos[1]);
+
+        ellipse(this.pos[0] + this.aimDir[0] * this.radius, this.pos[1] + this.aimDir[1] * this.radius, this.radius * 0.4, this.radius * 0.4);
     }
 }
 
-function drawStats(){
-    fill(255, 255, 0);
-    stroke(0)
-    strokeWeight(1);
-    textSize(18);
-    text((int)(camReference.latency * 1000) + ' ms', 5, 20);
-}
+class ClientProjectile extends Projectile {
+    constructor() {
+        super();
+    }
 
-function keyPressed() {
-    keyMonitor.set(key, true);
-    checkInput()
-}
-
-function keyReleased() {
-    keyMonitor.set(key, false);
-    checkInput()
-}
-
-function mousePressed() {
-    keyMonitor.set(mouseButton, true);
-    checkInput()
-}
-
-function mouseReleased() {
-    keyMonitor.set(mouseButton, false);
-    checkInput()
-}
-
-function checkInput() {
-    let newDir = [0, 0];
-    if (keyMonitor.get('a')) newDir[0]--;
-    if (keyMonitor.get('d')) newDir[0]++;
-    if (keyMonitor.get('w')) newDir[1]--;
-    if (keyMonitor.get('s')) newDir[1]++;
-    if (newDir[0] != prevDir[0] || newDir[1] != prevDir[1]) {
-        prevDir = newDir;
-        sendMessage('newdir', {
-            'id': playerId,
-            'dir': newDir
-        })
+    display() {
+        noStroke();
+        fill(this.color);
+        let dia = this.radius * 2;
+        ellipse(this.pos[0], this.pos[1], dia, dia);
     }
 }

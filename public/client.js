@@ -5,11 +5,13 @@ var realOx, realOy; //real origin coordinates after adapting to window screen
 var mousePos = []; //adapted mouse coordinates after adapting window screen
 
 var socket;
+var clientId;
 
 var deltaTime = 0; //variation in time from last frame
 var prevDate = Date.now(); //last date saved, used to calculate deltatime
 
-var game = new Game();
+var game;
+var inGame = false;
 
 function setup() {
     createCanvas(windowWidth, windowHeight);
@@ -19,21 +21,74 @@ function setup() {
 
     frameRate(999);
 
+    //temp code
     socket.emit('joinrequest', {
-        'color': [123, 321, 333],
-        'radius': 80
+        'color': [123, 0, 255],
+        'radius': 50
     });
+}
+
+function registerEvents() {
+    socket.on('welcome', function (data) {
+        clientId = data.id;
+    });
+
+    socket.on('joinaccept', function (data) {
+        if (data.id == clientId) {
+            game = new ClientGame();
+            inGame = true;
+        }
+    });
+
+    socket.on('newplayer', function (data) {
+        if (inGame) game.addPlayer(data);
+    });
+
+    socket.on('removeplayer', function (data) {
+        if (inGame) game.removePlayer(data.id);
+    });
+
+    socket.on('update', function (data) {
+        if (inGame) {
+            for (let i = 0; i < game.players.length; i++) {
+                if (game.players[i].id == data.id) {
+                    game.updatePlayer(game.players[i], data);
+                    break;
+                }
+            }
+        }
+    });
+
+    socket.on('pingtest', function () {
+        socket.emit('pingtest');
+    });
+}
+
+function sendMessage(type, data) {
+    socket.emit(type, data);
 }
 
 function draw() {
     background(80);
     calculateDeltaTime();
     adaptMouse();
-    game.update(deltaTime);
-
-    clientLayer();
-
+    push();
+    adaptScreen();
+    push()
+    if (inGame) game.update(deltaTime);
+    pop();
+    drawStats();
+    pop();
     drawBoundaries();
+}
+
+function drawStats() {
+    fill(255, 255, 0);
+    stroke(0)
+    strokeWeight(1);
+    textSize(16);
+    if (inGame) text((int)(game.camReference.latency * 1000) + ' ms', 90, 20);
+    text('FPS: ' + (int)(frameRate()), 5, 20);
 }
 
 function calculateDeltaTime() {
@@ -44,4 +99,32 @@ function calculateDeltaTime() {
 
 function adaptMouse() {
     mousePos = [(mouseX - realOx) / scaleRatio, (mouseY - realOy) / scaleRatio];
+}
+
+function keyPressed() {
+    if (inGame) {
+        game.keyMonitor.set(key, true);
+        game.checkInput();
+    }
+}
+
+function keyReleased() {
+    if (inGame) {
+        game.keyMonitor.set(key, false);
+        game.checkInput();
+    }
+}
+
+function mousePressed() {
+    if (inGame) {
+        game.keyMonitor.set(mouseButton, true);
+        game.checkInput();
+    }
+}
+
+function mouseReleased() {
+    if (inGame) {
+        game.keyMonitor.set(mouseButton, false);
+        game.checkInput();
+    }
 }

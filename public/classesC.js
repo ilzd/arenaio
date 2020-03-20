@@ -1,13 +1,16 @@
-class Player {
+class GameObject {
     constructor() {
-        this.id = 0;
+        this.id = 0; //unique identifier
         this.pos = [0, 0]; //position on map
+        this.radius = 40; //player radius
+    }
+}
+
+class Mobile extends GameObject {
+    constructor() {
+        super();
         this.dir = [0, 0]; //move direction
         this.speed = 400; //move speed
-        this.color = [255, 0, 0]; //player color
-        this.radius = 40; //player radius
-        this.nickname = 'Player'; //player display name
-        this.latency = 0; //player latency
     }
 
     move(deltaTime) {
@@ -20,18 +23,32 @@ class Player {
     }
 }
 
+class Player extends Mobile {
+    constructor() {
+        super();
+        this.color = [255, 0, 0]; //player color
+        this.nickname = 'Player'; //player display name
+        this.latency = 0; //player latency
+        this.aimDir = [1, 0];
+    }
+
+    fixAimDir(){
+        this.aimDir = normalizeVector(this.aimDir);
+    }
+}
+
 class Game {
     constructor() {
         this.mapWidth = 1500;
         this.mapHeight = 1500;
         this.players = [];
+        this.projectiles = [];
     }
 
     checkColisions() {
         //related to players
         for (let i = 0; i < this.players.length; i++) {
             let plr = this.players[i];
-
             //checking colision between players and map extremes
             if (plr.pos[0] - plr.radius < 0) {
                 plr.pos[0] = plr.radius;
@@ -44,7 +61,7 @@ class Game {
                 plr.pos[1] = this.mapHeight - plr.radius;
             }
 
-            //checking colision between players
+            //checking colision between players (maybe keep this only in the server)
             for (let j = 0; j < this.players.length; j++) {
                 let plr2 = this.players[j];
                 if (i != j) {
@@ -58,6 +75,7 @@ class Game {
                     }
                 }
             }
+
         }
     }
 
@@ -66,13 +84,11 @@ class Game {
             let plr = this.players[i];
             plr.move(deltaTime);
         }
+        for (let i = 0; i < this.projectiles.length; i++) {
+            let proj = this.projectiles[i];
+            proj.move(deltaTime);
+        }
         this.checkColisions();
-    }
-
-    buildPlayer(data) {
-        let player = new Player();
-        this.updatePlayer(player, data);
-        return player;
     }
 
     updatePlayer(player, data) {
@@ -81,8 +97,47 @@ class Game {
                 player[prop] = data[prop];
                 if (prop == 'dir') {
                     player.fixDir();
+                } else if(prop = 'aimdir'){
+                    player.fixAimDir();
                 }
             }
         }
+    }
+
+    removePlayer(id){
+        for (let i = 0; i < this.players.length; i++) {
+            if (this.players[i].id == id) {
+                this.players.splice(i, 1);
+                break;
+            }
+        }
+    }
+
+    updateProjectile(proj, data) {
+        for (let prop in proj) {
+            if ("undefined" != typeof (data[prop])) {
+                proj[prop] = data[prop];
+                if (prop == 'dir') {
+                    proj.fixDir();
+                }
+            }
+        }
+    }
+
+    removeProjectile(id){
+        for (let i = 0; i < this.projectiles.length; i++) {
+            if (this.projectiles[i].id == id) {
+                this.projectiles.splice(i, 1);
+                break;
+            }
+        }
+    }
+}
+
+class Projectile extends Mobile {
+    constructor(){
+        super();
+        this.damage = 0;
+        this.color = [0, 0, 0];
     }
 }
