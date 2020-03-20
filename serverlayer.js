@@ -95,5 +95,6 @@ class ServerPlayer extends Player{
 }
 
 module.exports = {
-    ServerGame
+    ServerGame,
+    ServerPlayer
 }
