@@ -42,3 +42,28 @@ function constrainValue(val, min, max){
     return val;
 }
 
+function maxValue(n1, n2){
+    if(n1 > n2){
+        return n1;
+    }
+
+    return n2;
+}
+
+function minValue(n1, n2){
+    if(n1 > n2){
+        return n2;
+    }
+
+    return n1;
+}
+
+function angleFromX(vet){
+    let mag1 = 1, mag2 = magVector(vet);
+    let dot = vet[0];
+    let angle = Math.acos(dot / (mag1 * mag2));
+    if(vet[1] > 0){
+        angle = Math.PI * 2 - angle;
+    }
+    return angle;
+}

@@ -1,4 +1,4 @@
-const VIRTUAL_WIDTH = 2000, VIRTUAL_HEIGHT = 1200; //virtual screen dimentions
+const VIRTUAL_WIDTH = 1570, VIRTUAL_HEIGHT = 883; //virtual screen dimentions
 var scaleRatio; //relation between window dimentions and virtual screen dimentions
 var realW, realH; //real dimentions after adapting to window screen
 var realOx, realOy; //real origin coordinates after adapting to window screen
@@ -16,6 +16,7 @@ var inGame = false;
 function setup() {
     createCanvas(windowWidth, windowHeight);
     windowResized();
+
     socket = io();
     registerEvents();
 
@@ -25,8 +26,18 @@ function setup() {
     socket.emit('joinrequest', {
         'nickname': 'LzD',
         'color': [123, 0, 255],
-        'radius': 50
+        'radius': 50,
+        'build': {
+            'basicAttack': 3
+        }
     });
+
+    document.onkeydown = function(event){
+        if (event.key == "Tab") {
+            event.preventDefault();
+        }
+    };
+
 }
 
 function registerEvents() {
@@ -86,6 +97,7 @@ function draw() {
     push()
     if (inGame) game.update(deltaTime);
     pop();
+    if(inGame) if(game.keyMonitor.get('Tab')) game.drawRanking();
     drawStats();
     pop();
     drawBoundaries();
@@ -124,16 +136,16 @@ function keyReleased() {
     }
 }
 
-function mousePressed() {
+function mousePressed(event) {
     if (inGame) {
-        game.keyMonitor.set(mouseButton, true);
+        game.keyMonitor.set(event.button, true);
         game.checkInput();
     }
 }
 
-function mouseReleased() {
+function mouseReleased(event) {
     if (inGame) {
-        game.keyMonitor.set(mouseButton, false);
+        game.keyMonitor.set(event.button, false);
         game.checkInput();
     }
 }

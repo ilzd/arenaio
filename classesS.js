@@ -19,16 +19,18 @@ class Mobile extends GameObject {
         super();
         this.dir = [0, 0]; //move direction
         this.speed = 400; //move speed
+        this.slow = 1;
     }
 
     move(deltaTime) {
-        this.pos[0] += this.dir[0] * this.speed * deltaTime;
-        this.pos[1] += this.dir[1] * this.speed * deltaTime;
+        this.pos[0] += this.dir[0] * this.speed * deltaTime * this.slow;
+        this.pos[1] += this.dir[1] * this.speed * deltaTime * this.slow;
     }
 
     fixDir() {
         this.dir = normalizeVector(this.dir);
     }
+
 }
 
 class Player extends Mobile {
@@ -38,12 +40,15 @@ class Player extends Mobile {
         this.nickname = 'Player'; //player display name
         this.latency = 0; //player latency
         this.aimDir = [1, 0];
-        this.attackSpeed = 20;
+        this.attackSpeed = 1.5;
         this.isAttacking = false;
         this.attackDelay = 0;
         this.build = {
             'basicAttack': 0,
         }
+        this.points = 0;
+        this.maxLife = 100;
+        this.life = this.maxLife;
     }
 
     fixAimDir(){
@@ -54,6 +59,11 @@ class Player extends Mobile {
         if(this.isAttacking){
             this.attackDelay = constrainValue(this.attackDelay + deltaTime, 0, 1 / this.attackSpeed);
         }
+    }
+
+    update(deltaTime){
+        this.move(deltaTime);
+        this.attack(deltaTime);
     }
 }
 
@@ -102,8 +112,7 @@ class Game {
     update(deltaTime) {
         for (let i = 0; i < this.players.length; i++) {
             let plr = this.players[i];
-            plr.move(deltaTime);
-            plr.attack(deltaTime);
+            plr.update(deltaTime);
         }
         for (let i = 0; i < this.projectiles.length; i++) {
             let proj = this.projectiles[i];
@@ -158,16 +167,10 @@ class Game {
 class Projectile extends Mobile {
     constructor(){
         super();
-        this.damage = 0;
         this.color = [0, 0, 0];
         this.speed = 1200;
         this.range = 1000;
-        this.travaledDistance = 0;
-    }
-
-    move(deltaTime){
-        super.move(deltaTime);
-        this.travaledDistance += deltaTime * this.speed;
+        this.traveledDistance = 0;
     }
 }
 

@@ -5,6 +5,7 @@ class ClientGame extends Game {
         this.keyMonitor = new Map();
         this.prevDir = [0, 0];
         this.prevAttacking;
+        this.cameraOffset = [0, 0];
     }
 
     update(deltaTime) {
@@ -24,7 +25,11 @@ class ClientGame extends Game {
 
     positionCamera() {
         translate(VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT / 2);
-        translate(-this.camReference.pos[0], -this.camReference.pos[1]);
+        let lookDir = [constrainValue(mousePos[0], 0, VIRTUAL_WIDTH) - VIRTUAL_WIDTH / 2,
+        mousePos[1] - VIRTUAL_HEIGHT / 2];
+        this.cameraOffset[0] = map(lookDir[0], -VIRTUAL_WIDTH / 2, VIRTUAL_WIDTH / 2, -VIRTUAL_WIDTH * 0.1, VIRTUAL_WIDTH * 0.1);
+        this.cameraOffset[1] = map(lookDir[1], -VIRTUAL_HEIGHT / 2, VIRTUAL_HEIGHT / 2, -VIRTUAL_WIDTH * 0.1, VIRTUAL_WIDTH * 0.1);
+        translate(-this.camReference.pos[0] - this.cameraOffset[0], -this.camReference.pos[1] - this.cameraOffset[1]);
     }
 
     drawMap() {
@@ -41,6 +46,40 @@ class ClientGame extends Game {
         }
         for (let i = 0; i < this.mapHeight; i += yStep) {
             line(0, i, this.mapWidth, i);
+        }
+    }
+
+    drawRanking() {
+        this.sortPlayers();
+        fill(0, 150);
+        stroke(0);
+        strokeWeight(1);
+        push();
+        translate(VIRTUAL_WIDTH / 4, VIRTUAL_HEIGHT * 0.1);
+        rect(0, 0, VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT * 0.8);
+        fill(255);
+        textSize(32)
+        for (let i = 0; i < 5; i++) {
+            if (this.players.length > i)
+                text((i + 1) + '. ' + this.players[i].nickname + ' - ' + this.players[i].points + ' points', 10, 42 * (i + 1));
+        }
+        pop();
+    }
+
+    sortPlayers() {
+        let count = 1;
+        while (count > 0) {
+            count = 0;
+            for (let i = 0; i < this.players.length - 1; i++) {
+                let plr1 = this.players[i], plr2 = this.players[i + 1];
+                let aux;
+                if (plr1.points < plr2.points) {
+                    count++;
+                    aux = plr2;
+                    this.players[i + 1] = plr1;
+                    this.players[i] = aux;
+                }
+            }
         }
     }
 
@@ -64,8 +103,8 @@ class ClientGame extends Game {
             })
         }
 
-        if (this.keyMonitor.get('left') != this.prevAttacking) {
-            this.prevAttacking = this.keyMonitor.get('left');
+        if (this.keyMonitor.get(0) != this.prevAttacking) {
+            this.prevAttacking = this.keyMonitor.get(0);
             sendMessage('attacking', {
                 'id': clientId,
                 'intent': this.prevAttacking
@@ -74,7 +113,7 @@ class ClientGame extends Game {
     }
 
     checkPlayerAim() {
-        this.camReference.aimDir = [mouseX - width / 2, mouseY - height / 2];
+        this.camReference.aimDir = [mousePos[0] - VIRTUAL_WIDTH / 2 + this.cameraOffset[0], mousePos[1] - VIRTUAL_HEIGHT / 2 + this.cameraOffset[1]];
         this.camReference.fixAimDir();
         sendMessage('newaimdir', {
             'id': clientId,
@@ -129,11 +168,17 @@ class ClientPlayer extends Player {
         let attackState = mapValue(this.attackDelay, 0, 1 / this.attackSpeed, this.radius, 0);
         ellipse(this.pos[0] + this.aimDir[0] * attackState, this.pos[1] + this.aimDir[1] * attackState, this.radius * 0.3, this.radius * 0.3);
         ellipse(this.pos[0] + this.aimDir[0] * this.radius, this.pos[1] + this.aimDir[1] * this.radius, this.radius * 0.4, this.radius * 0.4);
+
+        noStroke();
+        fill(0);
+        rect(this.pos[0] - this.radius, this.pos[1] + this.radius * 1.1, this.radius * 2, this.radius * 0.2);
+        fill(255, 0, 0);
+        rect(this.pos[0] - this.radius, this.pos[1] + this.radius * 1.1, map(this.life, 0, this.maxLife, 0, this.radius * 2), this.radius * 0.2);
     }
 
-    attack(deltaTime){
+    attack(deltaTime) {
         super.attack(deltaTime);
-        if(this.attackDelay == 1 / this.attackSpeed) this.attackDelay = 0;
+        if (this.attackDelay == 1 / this.attackSpeed) this.attackDelay = 0;
     }
 }
 
@@ -143,7 +188,8 @@ class ClientProjectile extends Projectile {
     }
 
     display() {
-        noStroke();
+        stroke(0);
+        strokeWeight(1);
         fill(this.color);
         let dia = this.radius * 2;
         ellipse(this.pos[0], this.pos[1], dia, dia);
