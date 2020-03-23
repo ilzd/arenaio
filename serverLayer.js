@@ -46,7 +46,7 @@ class ServerGame extends Game {
                     'speed': plr.speed,
                     'color': plr.color,
                     'nickname': plr.nickname,
-                    'latency': plr.latencym,
+                    'latency': plr.latency,
                     'aimDir': plr.aimDir,
                     'attackSpeed': plr.attackSpeed,
                     'isAttacking': plr.isAttacking,
@@ -54,7 +54,8 @@ class ServerGame extends Game {
                     'build': plr.build,
                     'points': plr.points,
                     'maxLife': plr.maxLife,
-                    'life': plr.life
+                    'life': plr.life,
+                    'slow': plr.slow
                 }
             }
         }
@@ -103,9 +104,9 @@ class ServerGame extends Game {
 
         this.checkProjectiles();
 
-        this.cleanInactiveObjects();
-
         this.sendMessages();
+
+        this.cleanInactiveObjects();
     }
 
     sendMessages() {
@@ -154,6 +155,19 @@ class ServerGame extends Game {
         for (let i = this.projectiles.length - 1; i >= 0; i--) {
             if (!this.projectiles[i].active) this.removeProjectile(this.projectiles[i].id);
         }
+
+        for (let i = this.players.length - 1; i >= 0; i--) {
+            if (!this.players[i].active) {
+                let plr = this.players[i];
+                plr.life = plr.maxLife;
+                plr.isAttacking = false;
+                plr.slowEffects = [];
+                plr.slow = 1;
+                plr.pos = [Math.random() * this.mapWidth, Math.random() * this.mapHeight];
+                plr.active = true;
+                this.io.emit('update', this.getPlayerData(plr.id));
+            }
+        }
     }
 
     executeBasicAttack(player) {
@@ -172,7 +186,7 @@ class ServerGame extends Game {
                 }
                 proj = this.buildProjectile(player.id, projData);
 
-                proj.effects.push(new DamageEffect(20));
+                proj.effects.push(new DamageEffect(player, 20));
 
                 this.addProjectile(proj);
                 this.io.emit('newprojectile', projData);
@@ -194,7 +208,7 @@ class ServerGame extends Game {
                     }
                     proj = this.buildProjectile(player.id, projData);
 
-                    proj.effects.push(new DamageEffect(2));
+                    proj.effects.push(new DamageEffect(player, 2));
 
                     this.addProjectile(proj);
                     this.io.emit('newprojectile', projData);
@@ -205,7 +219,7 @@ class ServerGame extends Game {
                 projData = {
                     'id': this.getNewUniqueId(),
                     'color': [0, 0, 255],
-                    'speed': 2000,
+                    'speed': 2300,
                     'range': 900,
                     'radius': 10,
                     'pos': [player.pos[0] + player.aimDir[0] * player.radius, player.pos[1] + player.aimDir[1] * player.radius],
@@ -213,7 +227,7 @@ class ServerGame extends Game {
                 }
                 proj = this.buildProjectile(player.id, projData);
 
-                proj.effects.push(new DamageEffect(35));
+                proj.effects.push(new DamageEffect(player, 35));
 
                 this.addProjectile(proj);
                 this.io.emit('newprojectile', projData);
@@ -231,7 +245,7 @@ class ServerGame extends Game {
                 }
                 proj = this.buildProjectile(player.id, projData);
 
-                proj.effects.push(new DamageEffect(25));
+                proj.effects.push(new DamageEffect(player, 25));
                 proj.effects.push(new SlowEffect(0.5, 0.5));
 
                 this.addProjectile(proj);
@@ -269,6 +283,13 @@ class ServerGame extends Game {
 
     buildPlayer(data) {
         let player = new ServerPlayer();
+
+        if (data.build.basicAttack == 2) {
+            data.attackSpeed = 0.75;
+        }
+
+        data.pos = [Math.random() * this.mapWidth, Math.random() * this.mapHeight];
+
         this.updatePlayer(player, data);
         return player;
     }
@@ -388,12 +409,25 @@ class ServerPlayer extends Player {
 
     }
 
-    takeDamage(value) {
+    takeDamage(source, value) {
         this.life = maxValue(0, this.life - value);
         this.messages.push({
             'type': 'update',
             'data': { 'id': this.id, 'life': this.life }
         });
+        if (this.life == 0) {
+            source.points++;
+            this.points = maxValue(0, this.points - 1);
+            this.messages.push({
+                'type': 'update',
+                'data': { 'id': this.id, 'points': this.points }
+            });
+            this.messages.push({
+                'type': 'update',
+                'data': { 'id': source.id, 'points': source.points }
+            });
+            this.active = false;
+        }
     }
 }
 

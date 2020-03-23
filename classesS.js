@@ -36,6 +36,7 @@ class Mobile extends GameObject {
 class Player extends Mobile {
     constructor() {
         super();
+        this.active = true;
         this.color = [255, 0, 0]; //player color
         this.nickname = 'Player'; //player display name
         this.latency = 0; //player latency

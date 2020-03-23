@@ -20,6 +20,35 @@
 </head>
 
 <body oncontextmenu="return false;">
+    <div id="form" style="padding: 20px">
+        <label for="nickname">Nickname</label><br/>
+        <input id="nickname" maxlength="10" value='Player'/>
+        <br/>
+        <br/>
+        <label for="basicAttack">Ataque básico</label><br/>
+        <select id="basicAttack">
+            <option value='0'>
+                Dispara um projétil na direção do cursor. Alcance: Médio | Dano: Médio | Tamanho: Pequeno | Velocidade de ataque: Média | Velocidade do projetil: Média
+            </option>
+            <option value='1'>
+                Dispara muitos projéteis na direção aproximada do cursor. Alcance: Baixo | Dano(por projétil): Baixo | Tamanho: Pequeno | Velocidade de ataque: Média | Velocidade do projetil: Média
+            </option>
+            <option value='2'>
+                Dispara um projétil na direção do cursor. Alcance: Alto | Dano: Alto | Tamanho: Pequeno | Velocidade de ataque: Muito Baixa | Velocidade do projetil: Alta
+            </option>
+            <option value='3'>
+                Dispara um projétil na direção do cursor que causa lentidão no alvo. Alcance: Médio | Dano: Médio-Baixo | Tamanho: Pequeno | Velocidade de ataque: Média | Velocidade do projetil: Média
+            </option>
+        </select>
+        <br/>
+        <br/>
+        <label for="color">Cor</label><br/>
+        <input id='color' type='color' value='#ff0000'/>
+
+        <br/>
+        <br/>
+        <button onclick="sendForm()">Entrar</button>
+    </div>
 </body>
 
 </html>

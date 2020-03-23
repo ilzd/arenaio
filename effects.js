@@ -8,13 +8,14 @@ class Effect {
 }
 
 class DamageEffect extends Effect {
-    constructor(value){
+    constructor(source, value){
         super();
         this.value = value;
+        this.source = source;
     }
 
     apply(player){
-        player.takeDamage(this.value);
+        player.takeDamage(this.source, this.value);
     }
 }
 

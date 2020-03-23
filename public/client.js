@@ -13,6 +13,8 @@ var prevDate = Date.now(); //last date saved, used to calculate deltatime
 var game;
 var inGame = false;
 
+var canvas, form;
+
 function setup() {
     createCanvas(windowWidth, windowHeight);
     windowResized();
@@ -22,23 +24,42 @@ function setup() {
 
     frameRate(999);
 
-    //temp code
-    socket.emit('joinrequest', {
-        'nickname': 'LzD',
-        'color': [123, 0, 255],
-        'radius': 50,
-        'build': {
-            'basicAttack': 3
-        }
-    });
-
-    document.onkeydown = function(event){
+    document.onkeydown = function (event) {
         if (event.key == "Tab") {
             event.preventDefault();
         }
     };
 
+    form = document.getElementById('form');
+    canvas = document.getElementById('defaultCanvas0');
+    canvas.style.display = 'none';
+
 }
+
+function sendForm() {
+    let color = hexToRgb(document.getElementById('color').value);
+
+    socket.emit('joinrequest', {
+        'nickname': document.getElementById('nickname').value,
+        'color': [color.r, color.g, color.b],
+        'radius': 50,
+        'build': {
+            'basicAttack': (int)(document.getElementById('basicAttack').value),
+        }
+    });
+
+    canvas.style.display = 'block';
+    form.style.display = 'none';
+}
+
+function hexToRgb(hex) {
+    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+    } : null;
+  }
 
 function registerEvents() {
     socket.on('welcome', function (data) {
@@ -70,7 +91,7 @@ function registerEvents() {
             }
         }
     });
-
+    
     socket.on('pingtest', function () {
         socket.emit('pingtest');
     });
@@ -95,9 +116,9 @@ function draw() {
     push();
     adaptScreen();
     push()
-    if (inGame) game.update(deltaTime);
+    if(inGame)game.update(deltaTime);
     pop();
-    if(inGame) if(game.keyMonitor.get('Tab')) game.drawRanking();
+    if (inGame) if (game.keyMonitor.get('Tab')) game.drawRanking();
     drawStats();
     pop();
     drawBoundaries();

@@ -9,6 +9,7 @@ class ClientGame extends Game {
     }
 
     update(deltaTime) {
+        if(!this.inGame) return;
         super.update(deltaTime);
         this.positionCamera();
         this.drawMap();
