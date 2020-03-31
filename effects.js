@@ -19,6 +19,18 @@ class DamageEffect extends Effect {
     }
 }
 
+class ProjDamage extends Effect {
+    constructor(proj, damage){
+        super();
+        this.proj = proj;
+        this.damage = damage;
+    }
+
+    apply(player){
+        player.takeDamage(this.proj.owner, this.damage);
+    }
+}
+
 class SlowEffect extends Effect {
     constructor(value, duration){
         super();
@@ -31,7 +43,76 @@ class SlowEffect extends Effect {
     }
 }
 
+class FastEffect extends Effect {
+    constructor(value, duration){
+        super();
+        this.value = value;
+        this.duration = duration
+    }
+
+    apply(player){
+        player.addFastEffect(this.value, this.duration);
+    }
+}
+
+class StunEffect extends Effect{
+    constructor(duration){
+        super();
+        this.duration = duration;
+    }
+
+    apply(player){
+        player.takeStun(this.duration);
+    }
+}
+
+class WaitEffect extends Effect{
+    constructor(effect, duration){
+        super();
+        this.duration = duration;
+        this.effect = effect;
+    }
+
+    apply(player){
+        this.effect.apply(player);
+    }
+}
+
+class ProjPush extends Effect{
+    constructor(proj, speed, duration){
+        super();
+        this.proj = proj;
+        this.speed = speed;
+        this.duration = duration;
+    }
+    
+    apply(player){
+        player.takeSilence(this.duration);
+        player.takeForce([this.proj.dir[0], this.proj.dir[1]], this.speed, this.duration);
+    }
+}
+
+class ProjPull extends Effect{
+    constructor(proj, speed){
+        super();
+        this.proj = proj;
+        this.speed = speed;
+    }
+    
+    apply(player){
+        let duration = (this.proj.traveledDistance + 10) / this.speed;
+        player.takeSilence(duration);
+        player.takeForce([this.proj.dir[0] * -1, this.proj.dir[1] * -1], this.speed, duration);
+    }
+}
+
 module.exports = {
     DamageEffect,
-    SlowEffect
+    ProjDamage,
+    SlowEffect,
+    FastEffect,
+    StunEffect,
+    WaitEffect,
+    ProjPush,
+    ProjPull
 }

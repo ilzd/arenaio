@@ -11,6 +11,7 @@
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/p5@1.0.0/lib/p5.min.js"></script>
+    <script src="constsC.js"></script>
     <script src="screen.js"></script>
     <script src="classesC.js"></script>
     <script src="utilsC.js"></script>
@@ -25,19 +26,127 @@
         <input id="nickname" maxlength="10" value='Player'/>
         <br/>
         <br/>
-        <label for="basicAttack">Ataque básico</label><br/>
+        <label for="basicAttack">Arma (Botão esquerdo do mouse)</label><br/>
         <select id="basicAttack">
             <option value='0'>
-                Dispara um projétil na direção do cursor. Alcance: Médio | Dano: Médio | Tamanho: Pequeno | Velocidade de ataque: Média | Velocidade do projetil: Média
+                Pistola equilibrada: Velocidade de ataque: Médio, Dano: Médio, Alcance: Médio, Diametro: Médio, Quantidade: 1
             </option>
             <option value='1'>
-                Dispara muitos projéteis na direção aproximada do cursor. Alcance: Baixo | Dano(por projétil): Baixo | Tamanho: Pequeno | Velocidade de ataque: Média | Velocidade do projetil: Média
+                Escopeta: Velocidade de ataque: Médio, Dano: Muito Baixo, Alcance: Baixo, Diametro: Pequeno, Quantidade: 30
             </option>
             <option value='2'>
-                Dispara um projétil na direção do cursor. Alcance: Alto | Dano: Alto | Tamanho: Pequeno | Velocidade de ataque: Muito Baixa | Velocidade do projetil: Alta
+                Rifle de longo alcance: Velocidade de ataque: Muito baixo, Dano: Alto, Alcance: Alto, Diametro: Médio, Quantidade: 1
             </option>
             <option value='3'>
-                Dispara um projétil na direção do cursor que causa lentidão no alvo. Alcance: Médio | Dano: Médio-Baixo | Tamanho: Pequeno | Velocidade de ataque: Média | Velocidade do projetil: Média
+                Pistola de gelo: Velocidade de ataque: Médio-Alto, Dano: Baixo-Médio, Alcance: Médio, Diametro: Médio, Quantidade: 1, Efeito: Lentidão
+            </option>
+            <option value='4'>
+                Rifle rápida: Velocidade de ataque: Alta, Dano: Muito Baixo, Alcance: Médio, Diametro: Médio, Quantidade: 1
+            </option>
+        </select>
+        <br/>
+        <br/>
+        <label for="active0">Habilidade Ativa 1 (Botão direito do mouse)</label><br/>
+        <select id="active0">
+            <option value='0' selected>
+                Salto interdimensional: Realiza um teletransporte de curta distância na sua direção de movimento.
+            </option>
+            <option value='1'>
+                Ímpeto: Recebe lentidão por um curto período de tempo para depois receber uma explosão de velocidade por um curto período de tempo.
+            </option>
+            <option value='2'>
+                Disparo atordoante: Dispara um grande e lento projétil que atordoa quem entrar for atingido.
+            </option>
+            <option value='3'>
+                Escudo de Zitor: Ganhe um escudo por um curto período de tempo que reflete todos os projéteis que o atingirem.
+            </option>
+            <option value='4'>
+                Camuflar-se: Se torne invisível por um curto período de tempo.
+            </option>
+            <option value='5'>
+                Desmaterializar-se: Se torne imaterial por um curto período de tempo ignorando colisões.
+            </option>
+            <option value='6'>
+                Empurrão: Dispara um projétil que empurra os alvos atingidos.
+            </option>
+            <option value='7'>
+                Puxão: Dispara um projétil que puxa os alvos atingidos.
+            </option>
+            <option value='8'>
+                Ritual de cura: Cura todos os jogadores próximos por um médio período de tempo.
+            </option>
+            <option value='9'>
+                Avanço rápido: Desliza rapidamente por uma distância média na direção de movimento.
+            </option>
+        </select>
+        <br/>
+        <br/>
+        <label for="active1">Habilidade Ativa 2 (Tecla E)</label><br/>
+        <select id="active1">
+            <option value='0'>
+                Salto interdimensional: Realiza um teletransporte de curta distância na sua direção de movimento.
+            </option>
+            <option value='1' selected>
+                Ímpeto: Recebe lentidão por um curto período de tempo para depois receber uma explosão de velocidade por um curto período de tempo.
+            </option>
+            <option value='2'>
+                Disparo atordoante: Dispara um grande e lento projétil que atordoa quem entrar for atingido.
+            </option>
+            <option value='3'>
+                Escudo de Zitor: Ganhe um escudo por um curto período de tempo que reflete todos os projéteis que o atingirem.
+            </option>
+            <option value='4'>
+                Camuflar-se: Se torne invisível por um curto período de tempo.
+            </option>
+            <option value='5'>
+                Desmaterializar-se: Se torne imaterial por um curto período de tempo ignorando colisões.
+            </option>
+            <option value='6'>
+                Empurrão: Dispara um projétil que empurra os alvos atingidos.
+            </option>
+            <option value='7'>
+                Puxão: Dispara um projétil que puxa os alvos atingidos.
+            </option>
+            <option value='8'>
+                Ritual de cura: Cura todos os jogadores próximos por um médio período de tempo.
+            </option>
+            <option value='9'>
+                Avanço rápido: Desliza rapidamente por uma distância média na direção de movimento.
+            </option>
+        </select>
+        <br/>
+        <br/>
+        <label for="active2">Habilidade Ativa 3 (Tecla Espaço)</label><br/>
+        <select id="active2">
+            <option value='0'>
+                Salto interdimensional: Realiza um teletransporte de curta distância na sua direção de movimento.
+            </option>
+            <option value='1'>
+                Ímpeto: Recebe lentidão por um curto período de tempo para depois receber uma explosão de velocidade por um curto período de tempo.
+            </option>
+            <option value='2' selected>
+                Disparo atordoante: Dispara um grande e lento projétil que atordoa quem entrar for atingido.
+            </option>
+            <option value='3'>
+                Escudo de Zitor: Ganhe um escudo por um curto período de tempo que reflete todos os projéteis que o atingirem.
+            </option>
+            <option value='4'>
+                Camuflar-se: Se torne invisível por um curto período de tempo.
+            </option>
+            <option value='5'>
+                Desmaterializar-se: Se torne imaterial por um curto período de tempo ignorando colisões.
+            </option>
+            <option value='6'>
+                Empurrão: Dispara um projétil que empurra os alvos atingidos.
+            </option>
+            <option value='7'>
+                Puxão: Dispara um projétil que puxa os alvos atingidos.
+            </option>
+            <option value='8'>
+                Ritual de cura: Cura todos os jogadores próximos por um médio período de tempo.
+            </option>
+            <option value='9'>
+                Avanço rápido: Desliza rapidamente por uma distância média na direção de movimento.
             </option>
         </select>
         <br/>

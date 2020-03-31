@@ -1,4 +1,3 @@
-const VIRTUAL_WIDTH = 1570, VIRTUAL_HEIGHT = 883; //virtual screen dimentions
 var scaleRatio; //relation between window dimentions and virtual screen dimentions
 var realW, realH; //real dimentions after adapting to window screen
 var realOx, realOy; //real origin coordinates after adapting to window screen
@@ -15,6 +14,14 @@ var inGame = false;
 
 var canvas, form;
 
+var skillsImgs = [];
+
+function preload(){
+    for(let i = 0; i < 10; i++){
+        skillsImgs.push(loadImage('images/skill' + i + '.png'));
+    }
+}
+
 function setup() {
     createCanvas(windowWidth, windowHeight);
     windowResized();
@@ -22,7 +29,9 @@ function setup() {
     socket = io();
     registerEvents();
 
-    frameRate(999);
+    frameRate(61);
+
+    noSmooth();
 
     document.onkeydown = function (event) {
         if (event.key == "Tab") {
@@ -33,11 +42,13 @@ function setup() {
     form = document.getElementById('form');
     canvas = document.getElementById('defaultCanvas0');
     canvas.style.display = 'none';
-
 }
 
 function sendForm() {
     let color = hexToRgb(document.getElementById('color').value);
+    let active0 = (int)(document.getElementById('active0').value);
+    let active1 = (int)(document.getElementById('active1').value);
+    let active2 = (int)(document.getElementById('active2').value);
 
     socket.emit('joinrequest', {
         'nickname': document.getElementById('nickname').value,
@@ -45,6 +56,8 @@ function sendForm() {
         'radius': 50,
         'build': {
             'basicAttack': (int)(document.getElementById('basicAttack').value),
+            'actives': [active0, active1, active2],
+            'passives': [0, 1]
         }
     });
 
@@ -59,7 +72,7 @@ function hexToRgb(hex) {
       g: parseInt(result[2], 16),
       b: parseInt(result[3], 16)
     } : null;
-  }
+}
 
 function registerEvents() {
     socket.on('welcome', function (data) {
@@ -91,6 +104,17 @@ function registerEvents() {
             }
         }
     });
+
+    socket.on('updateprojectile', function(data){
+        if (inGame) {
+            for (let i = 0; i < game.projectiles.length; i++) {
+                if (game.projectiles[i].id == data.id) {
+                    game.updateProjectile(game.projectiles[i], data);
+                    break;
+                }
+            }
+        }
+    });
     
     socket.on('pingtest', function () {
         socket.emit('pingtest');
@@ -100,8 +124,20 @@ function registerEvents() {
         if (inGame) game.addProjectile(data);
     });
 
+    socket.on('newstar', function (data) {
+        if (inGame) game.addStar(data);
+    });
+
     socket.on('removeprojectile', function (data) {
         if (inGame) game.removeProjectile(data.id);
+    });
+
+    socket.on('removestar', function (data) {
+        if (inGame) game.removeStar(data.id);
+    });
+
+    socket.on('chatmessage', function(data){
+        if(inGame) game.addChatMessage(data.message);
     });
 }
 
@@ -110,7 +146,7 @@ function sendMessage(type, data) {
 }
 
 function draw() {
-    background(80);
+    background(15);
     calculateDeltaTime();
     adaptMouse();
     push();
@@ -118,6 +154,8 @@ function draw() {
     push()
     if(inGame)game.update(deltaTime);
     pop();
+    if(inGame) if(game.inGame) game.drawUI();
+    if(inGame) game.displayChat(deltaTime);
     if (inGame) if (game.keyMonitor.get('Tab')) game.drawRanking();
     drawStats();
     pop();
@@ -129,7 +167,7 @@ function drawStats() {
     stroke(0)
     strokeWeight(1);
     textSize(16);
-    if (inGame) text((int)(game.camReference.latency * 1000) + ' ms', 90, 20);
+    if (inGame && game.inGame) text((int)(game.camReference.latency * 1000) + ' ms', 90, 20);
     text('FPS: ' + (int)(frameRate()), 5, 20);
 }
 
@@ -147,6 +185,7 @@ function keyPressed() {
     if (inGame) {
         game.keyMonitor.set(key, true);
         game.checkInput();
+        game.checkKeyPressed(key);
     }
 }
 
@@ -161,6 +200,7 @@ function mousePressed(event) {
     if (inGame) {
         game.keyMonitor.set(event.button, true);
         game.checkInput();
+        game.checkMousePressed(mouseButton);
     }
 }
 

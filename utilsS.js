@@ -68,6 +68,13 @@ function angleFromX(vet){
     return angle;
 }
 
+function angleBetweenVector(v1, v2){
+    let mag1 = magVector(v1), mag2 = magVector(v2);
+    let dot = v1[0] * v2[0] + v1[1] * v2[1];
+    let angle = Math.acos(dot / (mag1 * mag2));
+    return angle;
+}
+
 module.exports = {
     normalizeVector: normalizeVector,
     subVector: subVector,
@@ -79,5 +86,6 @@ module.exports = {
     constrainValue: constrainValue,
     maxValue: maxValue,
     minValue: minValue,
-    angleFromX: angleFromX
+    angleFromX: angleFromX,
+    angleBetweenVector: angleBetweenVector
 }

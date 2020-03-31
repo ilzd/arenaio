@@ -34,6 +34,12 @@ io.sockets.on(
             for (let i = 0; i < game.players.length; i++) {
                 socket.emit('newplayer', game.getPlayerData(game.players[i].id));
             }
+            for (let i = 0; i < game.projectiles.length; i++) {
+                socket.emit('newprojectile', game.getProjectileData(game.projectiles[i].id));
+            }
+            for (let i = 0; i < game.stars.length; i++) {
+                socket.emit('newstar', game.getStarData(game.stars[i].id));
+            }
             data.id = socket.id;
             let player = game.buildPlayer(data);
             game.addPlayer(socket, player);
@@ -81,13 +87,27 @@ io.sockets.on(
                 }
             }
         });
+
+        socket.on('skillused', function (data) {
+            game.executeSkill(data.id, data.skill);
+        });
+
+        socket.on('chatmessage', function (data) {
+            io.emit('chatmessage', data);
+        });
     }
 );
 
 server.listen(port);
 
 setInterval(update, 1);
-setInterval(updateImportant, 1000 / 2);
+setInterval(updateImportant, 1000 / 4);
+
+// setInterval(test, 2000);
+
+// function test(){
+//     io.emit('chatmessage', {'message': 'LzD: mensagem teste teste teste teste teste teste a teste'});
+// }
 
 var deltaTime = 0; //variation in time since last tick
 var prevDate = Date.now(); //last date saved, used to calculate deltaTime
