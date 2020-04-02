@@ -49,6 +49,8 @@ function sendForm() {
     let active0 = (int)(document.getElementById('active0').value);
     let active1 = (int)(document.getElementById('active1').value);
     let active2 = (int)(document.getElementById('active2').value);
+    let passive0 = (int)(document.getElementById('passive0').value);
+    let passive1 = (int)(document.getElementById('passive1').value);
 
     socket.emit('joinrequest', {
         'nickname': document.getElementById('nickname').value,
@@ -57,7 +59,7 @@ function sendForm() {
         'build': {
             'basicAttack': (int)(document.getElementById('basicAttack').value),
             'actives': [active0, active1, active2],
-            'passives': [0, 1]
+            'passives': [passive0, passive1]
         }
     });
 

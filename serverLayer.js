@@ -107,7 +107,9 @@ class ServerGame extends Game {
                     'reflecting': plr.reflecting,
                     'invisible': plr.invisible,
                     'imaterial': plr.imaterial,
-                    'areaHealing': plr.areaHealing
+                    'areaHealing': plr.areaHealing,
+                    'lifeRegen': plr.lifeRegen,
+                    'repulses': plr.repulses
                 }
             }
         }
@@ -457,7 +459,7 @@ class ServerGame extends Game {
                 }
                 proj = this.buildProjectile(player.id, projData);
 
-                proj.effects.push(new ProjDamage(proj, 7));
+                proj.effects.push(new ProjDamage(proj, 9));
 
                 this.addProjectile(proj);
                 this.io.emit('newprojectile', projData);
@@ -624,7 +626,7 @@ class ServerGame extends Game {
                 attackSpeed = 1.5;
                 break;
             case 2:
-                attackSpeed = 0.85;
+                attackSpeed = 0.8;
                 break;
             case 3:
                 attackSpeed = 1.75;
@@ -638,10 +640,48 @@ class ServerGame extends Game {
 
         data.attackSpeed = attackSpeed;
 
+        //if has no slow on recharge passive
+        if(this.hasPassive(0, data.build.passives)){
+            data.takesSlowOnRecharge = false;
+        }
+
+        //if has life regen passive
+        if(this.hasPassive(1, data.build.passives)){
+            data.lifeRegen = player.lifeRegen * 2;
+        }
+
+        //if has mobility passive
+        if(this.hasPassive(2, data.build.passives)){
+            data.speed = player.speed * 1.2;
+        }
+
+        //if has agility passive
+        if(this.hasPassive(3, data.build.passives)){
+            data.attackSpeed *= 1.2;
+        }
+
+        //if has repulsion passive
+        if(this.hasPassive(4, data.build.passives)){
+            data.repulses = true;
+        }
+
         data.pos = [Math.random() * this.mapWidth, Math.random() * this.mapHeight];
 
         this.updatePlayer(player, data);
         return player;
+    }
+
+    hasPassive(passive, passives){
+        let result = false;
+
+        for(let i = 0; i < passives.length; i++){
+            if(passives[i] == passive){
+                result = true;
+                break;
+            }
+        }
+
+        return result;
     }
 
     addPlayer(socket, player) {
@@ -709,43 +749,14 @@ class ServerPlayer extends Player {
         this.waitEffects = [];
         this.invisibleTimer = 0;
         this.wasImaterial = false;
+        this.takesSlowOnRecharge = true;
     }
 
     attack(deltaTime) {
-        // if (!this.isAttacking && this.attackIntent) {
-        //     this.addSlowEffect(0.35, 1 / this.attackSpeed);
-        //     //this.takeSilence(1 / this.attackSpeed);
-        //     this.isAttacking = true;
-        //     this.messages.push({
-        //         'type': 'update',
-        //         'data': {
-        //             'id': this.socket.id,
-        //             'isAttacking': true
-        //         }
-        //     });
-        // }
-        // if (this.attackDelay == 1 / this.attackSpeed) {
-        //     this.attackDelay = 0;
-        //     this.attacked = true;
-        //     if (!this.attackIntent) {
-        //         this.isAttacking = false;
-        //         this.messages.push({
-        //             'type': 'update',
-        //             'data': {
-        //                 'id': this.socket.id,
-        //                 'isAttacking': false,
-        //                 'attackDelay': 0,
-        //             }
-        //         });
-        //     } else {
-        //         this.addSlowEffect(0.35, 1 / this.attackSpeed);
-        //         //this.takeSilence(1 / this.attackSpeed);
-        //     }
-        // }
 
         if (this.attackIntent) {
             if (this.attackDelay == 0) {
-                this.addSlowEffect(0.35, 1 / this.attackSpeed);
+                if(this.takesSlowOnRecharge) this.addSlowEffect(0.35, 1 / this.attackSpeed);
                 this.attackDelay = 1 / this.attackSpeed;
                 this.attacked = true;
                 this.messages.push({

@@ -24,8 +24,11 @@
     <div id="form" style="padding: 20px">
         <label for="nickname">Nickname</label><br/>
         <input id="nickname" maxlength="10" value='Player'/>
+
         <br/>
         <br/>
+        <br/>
+
         <label for="basicAttack">Arma (Botão esquerdo do mouse)</label><br/>
         <select id="basicAttack">
             <option value='0'>
@@ -44,8 +47,11 @@
                 Rifle rápida: Velocidade de ataque: Alta, Dano: Muito Baixo, Alcance: Médio, Diametro: Médio, Quantidade: 1
             </option>
         </select>
+
         <br/>
         <br/>
+        <br/>
+
         <label for="active0">Habilidade Ativa 1 (Botão direito do mouse)</label><br/>
         <select id="active0">
             <option value='0' selected>
@@ -149,13 +155,61 @@
                 Avanço rápido: Desliza rapidamente por uma distância média na direção de movimento.
             </option>
         </select>
+        
         <br/>
         <br/>
+        <br/>
+
         <label for="color">Cor</label><br/>
         <input id='color' type='color' value='#ff0000'/>
 
         <br/>
         <br/>
+        <br/>
+
+        <label for="passive0">Habilidade Passiva 1</label><br/>
+        <select id="passive0">
+            <option value='0' selected>
+                Eficiência: Recarregue sua arma sem ficar lento
+            </option>
+            <option value='1'>
+                Resiliência: Sua regeneração de vida é maior
+            </option>
+            <option value='2'>
+                Mobilidade: Sua velocidade de movimento é maior
+            </option>
+            <option value='3'>
+                Agilidade: Sua velocidade de recarregamento é maior
+            </option>
+            <option value='4'>
+                Repulsão: Você constantemente empurra inimigos próximos para longe de você
+            </option>
+        </select>
+        <br/>
+        <br/>
+        <label for="passive1">Habilidade Passiva 1</label><br/>
+        <select id="passive1">
+            <option value='0'>
+                Eficiência: Recarregue sua arma sem ficar lento
+            </option>
+            <option value='1' selected>
+                Resiliência: Sua regeneração de vida é aumentada substancialmente
+            </option>
+            <option value='2'>
+                Mobilidade: Sua velocidade de movimento é maior
+            </option>
+            <option value='3'>
+                Agilidade: Sua velocidade de recarregamento é maior
+            </option>
+            <option value='4'>
+                Repulsão: Você constantemente empurra inimigos próximos para longe de você
+            </option>
+        </select>
+
+        <br/>
+        <br/>
+        <br/>
+
         <button onclick="sendForm()">Entrar</button>
     </div>
 </body>

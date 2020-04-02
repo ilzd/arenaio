@@ -39,6 +39,8 @@ class Player extends GameObject {
         this.invisible = false;
         this.imaterial = 0;
         this.areaHealing = 0;
+        this.lifeRegen = 3;
+        this.repulses = false;
     }
 
     fixAimDir() {
@@ -87,7 +89,12 @@ class Player extends GameObject {
             this.attack(deltaTime);
             this.updateColdowns(deltaTime);
             this.updateEffects(deltaTime);
+            this.regen(deltaTime);
         }
+    }
+
+    regen(deltaTime){
+        this.life = minValue(this.maxLife, this.life + this.lifeRegen * deltaTime);
     }
 
     updateEffects(deltaTime){
@@ -117,7 +124,7 @@ class Game {
         this.walls= [];
     }
 
-    checkColisions() {
+    checkColisions(deltaTime) {
         //related to players
         for (let i = 0; i < this.players.length; i++) {
             let plr = this.players[i];
@@ -142,13 +149,20 @@ class Game {
 
                 if (i != j) {
                     let minDist = plr.radius + plr2.radius;
-                    if (distVector(plr.pos, plr2.pos) < minDist) {
+                    let dist = distVector(plr.pos, plr2.pos);
+                    if (dist < minDist) {
                         let colisionDir = subVector(plr2.pos, plr.pos);
                         let colisionMag = magVector(colisionDir) - minDist;
                         colisionDir = normalizeVector(colisionDir);
                         plr.pos = subVector(plr.pos, multVector(colisionDir, -colisionMag * (plr2.radius / minDist)));
                         plr2.pos = subVector(plr2.pos, multVector(colisionDir, colisionMag * (plr.radius / minDist)));
+                    } else if(plr.repulses && dist < 500) {
+                        let colisionDir = subVector(plr2.pos, plr.pos);
+                        colisionDir = normalizeVector(colisionDir);
+                        plr2.pos[0] += colisionDir[0] * deltaTime * 60;
+                        plr2.pos[1] += colisionDir[1] * deltaTime * 60;
                     }
+
                 }
             }
 
@@ -222,7 +236,7 @@ class Game {
         for(let i = 0; i < this.stars.length; i++){
             this.stars[i].update(deltaTime);
         }
-        this.checkColisions();
+        this.checkColisions(deltaTime);
     }
 
     updatePlayer(player, data) {
