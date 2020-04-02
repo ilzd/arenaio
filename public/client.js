@@ -29,7 +29,7 @@ function setup() {
     socket = io();
     registerEvents();
 
-    frameRate(61);
+    frameRate(999);
 
     noSmooth();
 
@@ -128,6 +128,32 @@ function registerEvents() {
         if (inGame) game.addStar(data);
     });
 
+    socket.on('walls', function (data) {
+        if (inGame) {
+            game.walls = data;
+            for (let i = 0; i < game.walls.length; i++) {
+                for (let j = 0; j < game.walls[0].length; j++) {
+                    if(!game.walls[i][j]) continue;
+                    let value = map(dist(i, j, (MAP_HORIZONTAL_SQUARES - 1) / 2, (MAP_VERTICAL_SQUARES - 1) / 2),
+                        0, dist(0, 0, (MAP_HORIZONTAL_SQUARES - 1) / 2, (MAP_VERTICAL_SQUARES - 1) / 2),
+                        1, 0)
+                    game.mapColors[i][j] = [round(100 + value * 60), round(30 + value * 50), round(value * 30)];
+                }
+            }
+        }
+    });
+
+    socket.on('updatestar', function(data){
+        if (inGame) {
+            for (let i = 0; i < game.stars.length; i++) {
+                if (game.stars[i].id == data.id) {
+                    game.updateStar(game.stars[i], data);
+                    break;
+                }
+            }
+        }
+    });
+
     socket.on('removeprojectile', function (data) {
         if (inGame) game.removeProjectile(data.id);
     });
@@ -138,6 +164,10 @@ function registerEvents() {
 
     socket.on('chatmessage', function(data){
         if(inGame) game.addChatMessage(data.message);
+    });
+
+    socket.on('announcement', function(data){
+        if(inGame) game.addAnnouncement(data.message);
     });
 }
 
@@ -156,7 +186,8 @@ function draw() {
     pop();
     if(inGame) if(game.inGame) game.drawUI();
     if(inGame) game.displayChat(deltaTime);
-    if (inGame) if (game.keyMonitor.get('Tab')) game.drawRanking();
+    if(inGame) game.displayAnnouncements(deltaTime);
+    if (inGame) game.drawRanking();
     drawStats();
     pop();
     drawBoundaries();

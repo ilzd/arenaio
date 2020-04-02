@@ -114,5 +114,5 @@ module.exports = {
     StunEffect,
     WaitEffect,
     ProjPush,
-    ProjPull
+    ProjPull,
 }

@@ -19,6 +19,7 @@ const GameObject = classes.GameObject;
 const Game = classes.Game;
 const Player = classes.Player;
 const Projectile = classes.Projectile;
+const Star = classes.Star;
 
 const DamageEffect = effects.DamageEffect;
 const ProjDamage = effects.ProjDamage;
@@ -28,6 +29,7 @@ const StunEffect = effects.StunEffect;
 const WaitEffect = effects.WaitEffect;
 const ProjPush = effects.ProjPush;
 const ProjPull = effects.ProjPull;
+const ValidatePositionEffect = effects.ValidatePositionEffect;
 
 
 class ServerGame extends Game {
@@ -40,7 +42,31 @@ class ServerGame extends Game {
         this.uniqueId = 0;
         this.mapWidth = consts.MAP_WIDTH;
         this.mapHeight = consts.MAP_HEIGHT;
-        this.starTimer = 0;
+        this.blockSize = consts.MAP_SQUARE_STEP;
+
+        let data = {
+            'id': this.getNewUniqueId(),
+            'pos': [this.mapWidth / 2, this.mapHeight / 2],
+            'radius': 40
+        };
+        let star = this.buildStar(data);
+        this.addStar(star);
+
+        this.generateWalls();
+    }
+
+    generateWalls() {
+        for (let i = 0; i < consts.MAP_HORIZONTAL_SQUARES; i++) {
+            this.walls[i] = [];
+            for (let j = 0; j < consts.MAP_VERTICAL_SQUARES; j++) {
+                let chance = Math.random();
+                if (chance < 0.15) {
+                    this.walls[i].push(true);
+                } else {
+                    this.walls[i].push(false);
+                }
+            }
+        }
     }
 
     getNewUniqueId() {
@@ -102,7 +128,8 @@ class ServerGame extends Game {
                     'fast': proj.fast,
                     'color': proj.color,
                     'range': proj.range,
-                    'traveledDistance': proj.traveledDistance
+                    'traveledDistance': proj.traveledDistance,
+                    'type': proj.type
                 }
             }
         }
@@ -116,7 +143,8 @@ class ServerGame extends Game {
                     'id': star.id,
                     'pos': star.pos,
                     'radius': star.radius,
-                    'active': star.active
+                    'active': star.active,
+                    'respawn': star.respawn
                 }
             }
         }
@@ -170,40 +198,30 @@ class ServerGame extends Game {
         this.manageStars(deltaTime);
 
         this.cleanInactiveObjects();
-
     }
 
-    manageStars(deltaTime){
-        if(this.stars.length == 0){
-            if(this.starTimer == 0){
-                let data = {
-                    'id': this.getNewUniqueId(),
-                    'pos': [this.mapWidth / 2, this.mapHeight / 2],
-                    'radius': 40
-                };
-                let star = this.buildStar(data);
-                this.addStar(star);
-                this.starTimer = 15;
-            } else {
-                this.starTimer = maxValue(0, this.starTimer - deltaTime);
-            }
-        }
-
-        for(let i = 0; i < this.players.length; i++){
+    manageStars() {
+        for (let i = 0; i < this.players.length; i++) {
             let plr = this.players[i];
-            if(!plr.active) return;
+            if (!plr.active) return;
 
-            for(let j = 0; j < this.stars.length; j++){
+            for (let j = 0; j < this.stars.length; j++) {
                 let str = this.stars[j];
-                if(!str.active) return;
+                if (!str.respawn == 0) return;
 
-                if(distVector(plr.pos, str.pos) < plr.radius + str.radius){
-                    this.removeStar(str.id);
-                    plr.points += 3;
-                    this.io.emit('update', {'id': plr.id, 'points': plr.points});
+                if (distVector(plr.pos, str.pos) < plr.radius + str.radius) {
+                    plr.points += 5;
+                    str.respawn = str.maxRespawn;
+                    this.io.emit('update', { 'id': plr.id, 'points': plr.points });
+                    this.io.emit('updatestar', { 'id': str.id, 'respawn': str.respawn });
+                    this.announce(plr.nickname + ' coletou uma estrela');
                 }
             }
         }
+    }
+
+    announce(message){
+        this.io.emit('announcement', {'message': message});
     }
 
     sendMessages() {
@@ -259,6 +277,35 @@ class ServerGame extends Game {
                         }
                     }
                 }
+
+                let x = Math.trunc(proj.pos[0] / this.blockSize), y = Math.trunc(proj.pos[1] / this.blockSize);
+
+                for (let j = x - 1; j < x + 2; j++) {
+                    if (j < 0 || j > this.mapWidth / this.blockSize - 1) continue;
+                    for (let k = y - 1; k < y + 2; k++) {
+                        if (k < 0 || k > this.mapHeight / this.blockSize - 1) continue;
+
+                        if (this.walls[j][k]) {
+                            let wallX = j * this.blockSize, wallY = k * this.blockSize;
+                            let cX = proj.pos[0], cY = proj.pos[1];
+                            if (cX < wallX) {
+                                cX = wallX;
+                            } else if (cX > wallX + this.blockSize) {
+                                cX = wallX + this.blockSize;
+                            }
+                            if (cY < wallY) {
+                                cY = wallY;
+                            } else if (cY > wallY + this.blockSize) {
+                                cY = wallY + this.blockSize;
+                            }
+                            if (distVector(proj.pos, [cX, cY]) < proj.radius) {
+                                proj.active = false;
+                            }
+                        }
+
+                    }
+                }
+
             }
         }
 
@@ -321,7 +368,8 @@ class ServerGame extends Game {
                     'color': [255, 0, 0],
                     'speed': 1500,
                     'range': 600,
-                    'radius': 10,
+                    'radius': 4,
+                    'type': 0,
                     'pos': [player.pos[0] + player.aimDir[0] * player.radius, player.pos[1] + player.aimDir[1] * player.radius],
                     'dir': [player.aimDir[0], player.aimDir[1]],
                 }
@@ -343,7 +391,8 @@ class ServerGame extends Game {
                         'color': [255, 255, 0],
                         'speed': 750 + Math.random() * 1000,
                         'range': 400,
-                        'radius': 5,
+                        'radius': 4,
+                        'type': 0,
                         'pos': [player.pos[0] + player.aimDir[0] * player.radius, player.pos[1] + player.aimDir[1] * player.radius],
                         'dir': [projDir[0], projDir[1]],
                     }
@@ -362,7 +411,8 @@ class ServerGame extends Game {
                     'color': [0, 0, 255],
                     'speed': 2600,
                     'range': 900,
-                    'radius': 10,
+                    'radius': 4,
+                    'type': 0,
                     'pos': [player.pos[0] + player.aimDir[0] * player.radius, player.pos[1] + player.aimDir[1] * player.radius],
                     'dir': [player.aimDir[0], player.aimDir[1]],
                 }
@@ -380,7 +430,8 @@ class ServerGame extends Game {
                     'color': [200, 255, 255],
                     'speed': 1500,
                     'range': 600,
-                    'radius': 15,
+                    'radius': 4,
+                    'type': 0,
                     'pos': [player.pos[0] + player.aimDir[0] * player.radius, player.pos[1] + player.aimDir[1] * player.radius],
                     'dir': [player.aimDir[0], player.aimDir[1]],
                 }
@@ -396,10 +447,11 @@ class ServerGame extends Game {
             case 4:
                 projData = {
                     'id': this.getNewUniqueId(),
-                    'color': [0, 255, 255],
+                    'color': [0, 255, 0],
                     'speed': 2500,
                     'range': 700,
-                    'radius': 8,
+                    'radius': 4,
+                    'type': 0,
                     'pos': [player.pos[0] + player.aimDir[0] * player.radius, player.pos[1] + player.aimDir[1] * player.radius],
                     'dir': [player.aimDir[0], player.aimDir[1]],
                 }
@@ -420,7 +472,7 @@ class ServerGame extends Game {
         for (let i = 0; i < this.players.length; i++) {
             if (this.players[i].id == id) {
                 let player = this.players[i];
-                if (player.silenced > 0) return;
+                if (player.silenced > 0 || !player.active) return;
 
                 if (player.activesInfo[skill].coldown == 0) {
                     let projData, proj;
@@ -428,13 +480,14 @@ class ServerGame extends Game {
                     this.io.emit('update', { 'id': player.id, 'activesInfo': player.activesInfo });
                     switch (player.activesInfo[skill].skill) {
                         case 0:
-                            let flashDist = 250;
+                            let flashDist = 280;
                             // if (player.dir[0] != 0 || player.dir[1] != 0) {
                             //     player.pos = [player.pos[0] + player.dir[0] * flashDist, player.pos[1] + player.dir[1] * flashDist];
                             // } else {
-                                player.pos = [player.pos[0] + player.aimDir[0] * flashDist, player.pos[1] + player.aimDir[1] * flashDist];
+                            player.pos = [player.pos[0] + player.aimDir[0] * flashDist, player.pos[1] + player.aimDir[1] * flashDist];
+                            player.posToValidate = true;
                             // }
-                            this.io.emit('update', {'id': player.id, 'pos': player.pos});
+                            this.io.emit('update', { 'id': player.id, 'pos': player.pos, 'posToValidate': player.posToValidate });
                             break;
                         case 1:
                             player.addSlowEffect(0.2, 0.5);
@@ -448,6 +501,7 @@ class ServerGame extends Game {
                                 'speed': 500,
                                 'range': 750,
                                 'radius': 60,
+                                'type': 1,
                                 'pos': [player.pos[0] + player.aimDir[0] * player.radius, player.pos[1] + player.aimDir[1] * player.radius],
                                 'dir': [player.aimDir[0], player.aimDir[1]],
                             }
@@ -466,7 +520,9 @@ class ServerGame extends Game {
                             player.becomeInvisible(2.5);
                             break;
                         case 5:
-                            player.imaterial += 1.5;
+                            player.imaterial = 1.5;
+                            player.wasImaterial = true;
+                            
                             this.io.emit('update', { 'id': player.id, 'imaterial': player.imaterial });
                             break;
                         case 6:
@@ -481,6 +537,7 @@ class ServerGame extends Game {
                                     'speed': 800,
                                     'range': 450,
                                     'radius': 9,
+                                    'type': 1,
                                     'pos': [player.pos[0] + player.aimDir[0] * player.radius, player.pos[1] + player.aimDir[1] * player.radius],
                                     'dir': projDir,
                                 }
@@ -499,6 +556,7 @@ class ServerGame extends Game {
                                 'speed': 1400,
                                 'range': 600,
                                 'radius': 45,
+                                'type': 1,
                                 'pos': [player.pos[0] + player.aimDir[0] * player.radius, player.pos[1] + player.aimDir[1] * player.radius],
                                 'dir': [player.aimDir[0], player.aimDir[1]],
                             }
@@ -599,8 +657,8 @@ class ServerGame extends Game {
 
     buildProjectile(ownerId, data) {
         let owner;
-        for(let i = 0; i < this.players.length; i++){
-            if(this.players[i].id == ownerId){
+        for (let i = 0; i < this.players.length; i++) {
+            if (this.players[i].id == ownerId) {
                 owner = this.players[i];
                 break;
             }
@@ -621,17 +679,17 @@ class ServerGame extends Game {
     }
 
     buildStar(data) {
-        let star = new GameObject();
+        let star = new Star();
         this.updateStar(star, data);
         return star;
     }
 
-    addStar(star){
+    addStar(star) {
         this.stars.push(star);
         this.io.emit('newstar', this.getStarData(star.id));
     }
 
-    removeStar(id){
+    removeStar(id) {
         super.removeStar(id);
         this.io.emit('removestar', { 'id': id });
     }
@@ -650,39 +708,56 @@ class ServerPlayer extends Player {
         this.fastEffects = [];
         this.waitEffects = [];
         this.invisibleTimer = 0;
+        this.wasImaterial = false;
     }
 
     attack(deltaTime) {
-        if (!this.isAttacking && this.attackIntent) {
-            this.addSlowEffect(0.35, 1 / this.attackSpeed);
-            //this.takeSilence(1 / this.attackSpeed);
-            this.isAttacking = true;
-            this.messages.push({
-                'type': 'update',
-                'data': {
-                    'id': this.socket.id,
-                    'isAttacking': true
-                }
-            });
-        }
-        if (this.attackDelay == 1 / this.attackSpeed) {
-            this.attackDelay = 0;
-            this.attacked = true;
-            if (!this.attackIntent) {
-                this.isAttacking = false;
+        // if (!this.isAttacking && this.attackIntent) {
+        //     this.addSlowEffect(0.35, 1 / this.attackSpeed);
+        //     //this.takeSilence(1 / this.attackSpeed);
+        //     this.isAttacking = true;
+        //     this.messages.push({
+        //         'type': 'update',
+        //         'data': {
+        //             'id': this.socket.id,
+        //             'isAttacking': true
+        //         }
+        //     });
+        // }
+        // if (this.attackDelay == 1 / this.attackSpeed) {
+        //     this.attackDelay = 0;
+        //     this.attacked = true;
+        //     if (!this.attackIntent) {
+        //         this.isAttacking = false;
+        //         this.messages.push({
+        //             'type': 'update',
+        //             'data': {
+        //                 'id': this.socket.id,
+        //                 'isAttacking': false,
+        //                 'attackDelay': 0,
+        //             }
+        //         });
+        //     } else {
+        //         this.addSlowEffect(0.35, 1 / this.attackSpeed);
+        //         //this.takeSilence(1 / this.attackSpeed);
+        //     }
+        // }
+
+        if (this.attackIntent) {
+            if (this.attackDelay == 0) {
+                this.addSlowEffect(0.35, 1 / this.attackSpeed);
+                this.attackDelay = 1 / this.attackSpeed;
+                this.attacked = true;
                 this.messages.push({
                     'type': 'update',
                     'data': {
                         'id': this.socket.id,
-                        'isAttacking': false,
-                        'attackDelay': 0,
+                        'attackDelay': this.attackDelay,
                     }
                 });
-            } else {
-                this.addSlowEffect(0.35, 1 / this.attackSpeed);
-                //this.takeSilence(1 / this.attackSpeed);
             }
         }
+
         super.attack(deltaTime);
     }
 
@@ -697,6 +772,15 @@ class ServerPlayer extends Player {
 
             if (this.areaHealing > 0) {
                 this.applyAreaHeal(deltaTime);
+            }
+
+            if(this.wasImaterial && this.imaterial == 0){
+                this.wasImaterial = false;
+                this.game.validatePosition(this);
+                this.messages.push({
+                    'type': 'update',
+                    'data': {'id': this.id, 'pos': this.pos}
+                });
             }
         } else {
             this.respawn = maxValue(0, this.respawn - deltaTime);
@@ -838,6 +922,7 @@ class ServerPlayer extends Player {
                 'data': { 'id': source.id, 'points': source.points }
             });
             this.respawn = 3;
+            this.game.announce(source.nickname + ' eliminou ' + this.nickname);
         }
     }
 

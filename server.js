@@ -25,6 +25,14 @@ io.sockets.on(
 
         socket.on('disconnect', function () {
             console.log("client disconnected: " + socket.id);
+
+            for(let i = 0; i < game.players.length; i++){
+                if(game.players[i].id == socket.id){
+                    game.announce(game.players[i].nickname + ' deixou a arena');
+                    break;
+                }
+            }
+
             game.removePlayer(socket.id);
             io.emit('removeplayer', { 'id': socket.id });
         });
@@ -34,16 +42,23 @@ io.sockets.on(
             for (let i = 0; i < game.players.length; i++) {
                 socket.emit('newplayer', game.getPlayerData(game.players[i].id));
             }
+
             for (let i = 0; i < game.projectiles.length; i++) {
                 socket.emit('newprojectile', game.getProjectileData(game.projectiles[i].id));
             }
+
             for (let i = 0; i < game.stars.length; i++) {
                 socket.emit('newstar', game.getStarData(game.stars[i].id));
             }
+
+            socket.emit('walls', game.walls);
+
             data.id = socket.id;
             let player = game.buildPlayer(data);
             game.addPlayer(socket, player);
             io.emit('newplayer', game.getPlayerData(player.id));
+
+            game.announce(player.nickname + ' entrou na arena');
         });
 
         socket.on('newdir', function (data) {

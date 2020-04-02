@@ -1,6 +1,9 @@
 //MAP
-const MAP_WIDTH = 2250;
-const MAP_HEIGHT = 2250;
+const MAP_WIDTH = 2280;
+const MAP_HEIGHT = 2280;
+const MAP_SQUARE_STEP = 120;
+const MAP_HORIZONTAL_SQUARES = Math.round(MAP_WIDTH / MAP_SQUARE_STEP);
+const MAP_VERTICAL_SQUARES = Math.round(MAP_HEIGHT / MAP_SQUARE_STEP);
 
 //AREA HEAL SKILL
 const SKILL_HEALAREA_RADIUS = 310;
@@ -20,10 +23,6 @@ const VIRTUAL_MIDDLE_X = Math.round(VIRTUAL_WIDTH / 2); //x coordinate of middle
 const VIRTUAL_MIDDLE_Y = Math.round(VIRTUAL_HEIGHT / 2); //y coordinate of middle of screen
 
 const CAMERA_MAX_OFFSET = Math.round(VIRTUAL_WIDTH * 0.1); //max cam offset when hovering around
-
-const MAP_SQUARE_STEP = 150;
-const MAP_HORIZONTAL_SQUARES = Math.round(MAP_WIDTH / MAP_SQUARE_STEP);
-const MAP_VERTICAL_SQUARES = Math.round(MAP_HEIGHT / MAP_SQUARE_STEP);
 
 const SKILLS_IMAGENS_POS_X = Math.round(VIRTUAL_WIDTH * 0.15);
 const SKILLS_IMAGENS_POS_Y = Math.round(VIRTUAL_HEIGHT - 90);
@@ -52,6 +51,9 @@ const CHAT_TYPINGMSG_POS_Y = Math.round(VIRTUAL_HEIGHT * 0.93);
 const CHAT_TYPINGMSG_WIDTH = Math.round(VIRTUAL_WIDTH * 0.296);
 const CHAT_TYPINGMSG_HEIGHT = Math.round(VIRTUAL_HEIGHT * 0.065);
 
+const ANNOUNCEMENT_POS_X = VIRTUAL_MIDDLE_X;
+const ANNOUNCEMENT_POS_Y = Math.round(VIRTUAL_HEIGHT * 0.1);
+
 const RANK_POS_X = Math.round(VIRTUAL_WIDTH / 4);
 const RANK_POS_Y = Math.round(VIRTUAL_HEIGHT * 0.1);
 const RANK_WIDTH = Math.round(VIRTUAL_WIDTH / 2);
@@ -60,3 +62,4 @@ const RANK_HEIGHT = Math.round(VIRTUAL_HEIGHT * 0.8);
 const SKILL_HEALAREA_DIAMETER = SKILL_HEALAREA_RADIUS * 2;
 
 const SKILL_ZITOR_SHIELD_EXTRA_DIAMETER = SKILL_ZITOR_SHIELD_EXTRA_RADIUS * 2;
+

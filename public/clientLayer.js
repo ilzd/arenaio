@@ -8,8 +8,10 @@ class ClientGame extends Game {
         this.cameraOffset = [0, 0];
         this.mapWidth = MAP_WIDTH;
         this.mapHeight = MAP_HEIGHT;
+        this.blockSize = MAP_SQUARE_STEP;
         this.displayChatTimer = 0;
         this.chatMessages = [];
+        this.announcements = [];
         this.typing = false;
         this.chatMessage = '';
         this.eraseDelay = 0;
@@ -19,10 +21,15 @@ class ClientGame extends Game {
         for (let i = 0; i < MAP_HORIZONTAL_SQUARES; i++) {
             this.mapColors[i] = [];
             for (let j = 0; j < MAP_VERTICAL_SQUARES; j++) {
-                this.mapColors[i][j] = [noise(i / 8, j / 8) * 50, noise(i / 12, j / 12) * 100 + 50, noise(i / 10, j / 10) * 100 + 25];
+                //this.mapColors[i][j] = [noise(i / 8, j / 8) * 50, noise(i / 12, j / 12) * 100 + 50, noise(i / 10, j / 10) * 100 + 25];
+                this.mapColors[i][j] = [25,
+                    map(dist(i, j, (MAP_HORIZONTAL_SQUARES - 1) / 2, (MAP_VERTICAL_SQUARES - 1) / 2),
+                        0, dist(0, 0, (MAP_HORIZONTAL_SQUARES - 1) / 2, (MAP_VERTICAL_SQUARES - 1) / 2),
+                        120, 30),
+                    50]
             }
         }
-        this.skillKeys = ['RMB', 'E', 'SPC']
+        this.skillKeys = ['RMB', 'E', 'SPC'];
     }
 
     update(deltaTime) {
@@ -31,10 +38,15 @@ class ClientGame extends Game {
         this.positionCamera();
         this.drawMap();
         this.drawStars(deltaTime);
-        this.drawPlayers();
+        this.drawPlayers(deltaTime);
         this.drawProjectiles();
         this.checkPlayerAim();
         // this.checkForErasing(deltaTime);
+    }
+
+    addAnnouncement(message){
+        this.announcements.push({'message': message, 'duration': 3});
+        if (this.announcements.length > 3) this.announcements.splice(0, 1);
     }
 
     addChatMessage(message) {
@@ -72,15 +84,42 @@ class ClientGame extends Game {
         }
     }
 
+    displayAnnouncements(deltaTime){
+        push();
+        textAlign(CENTER, CENTER);
+        let vOffset = 0;
+        let tSize = 25;
+        stroke(0);
+        strokeWeight(1);
+        fill(255);
+
+        for(let i = this.announcements.length - 1; i >= 0; i--){
+            let ann = this.announcements[i];
+            textSize(tSize);
+
+            text(ann.message, ANNOUNCEMENT_POS_X, ANNOUNCEMENT_POS_Y + vOffset);
+
+            ann.duration = maxValue(0, ann.duration - deltaTime);
+            if(ann.duration == 0){
+                this.announcements.splice(i, 1);
+            }
+
+            vOffset -= 30;
+            tSize -= 3;
+        }
+
+        pop();
+    }
+
     drawStars(deltaTime) {
         for (let i = 0; i < this.stars.length; i++) {
             this.stars[i].display(deltaTime);
         }
     }
 
-    drawPlayers() {
+    drawPlayers(deltaTime) {
         for (let i = 0; i < this.players.length; i++) {
-            this.players[i].display(this.players[i].id == clientId);
+            this.players[i].display(this.players[i].id == clientId, deltaTime);
         }
     }
 
@@ -149,7 +188,15 @@ class ClientGame extends Game {
 
         stroke(0);
         noFill();
+
         ellipse(LIFE_GLOBE_X, LIFE_GLOBE_Y, 200, 200);
+
+        fill(255);
+        textSize(24);
+        push();
+        textAlign(CENTER, CENTER);
+        text(Math.round(this.camReference.life) + ' / ' + this.camReference.maxLife, LIFE_GLOBE_X, LIFE_GLOBE_Y);
+        pop();
 
         if (!this.camReference.active) {
             noStroke();
@@ -160,18 +207,53 @@ class ClientGame extends Game {
 
     drawRanking() {
         this.sortPlayers();
-        fill(0, 150);
-        noStroke();
-        push();
-        translate(RANK_POS_X, RANK_POS_Y);
-        rect(0, 0, RANK_WIDTH, RANK_HEIGHT);
-        fill(255);
-        textSize(32);
-        for (let i = 0; i < 10; i++) {
-            if (this.players.length > i)
-                text((i + 1) + '. ' + this.players[i].nickname + ' - ' + this.players[i].points + ' points', 10, 42 * (i + 1));
+
+        if (game.keyMonitor.get('Tab')) {
+            push();
+            translate(RANK_POS_X, RANK_POS_Y);
+            noFill();
+            stroke(0);
+            strokeWeight(4);
+            rect(0, 0, RANK_WIDTH, RANK_HEIGHT);
+            noStroke();
+            fill(255);
+            textSize(32);
+            for (let i = 0; i < 10; i++) {
+                if (this.players.length > i)
+                    text((i + 1) + 'º ' + this.players[i].nickname + ' - ' + this.players[i].points + ' points', 10, 42 * (i + 1));
+            }
+            pop();
+        } else {
+            noStroke();
+            let foundMe = false;
+            let tSize = 28;
+            for (let i = 0; i < 3; i++) {
+                if (this.players.length > i) {
+                    textSize(tSize);
+
+                    if (this.players[i].id == clientId) {
+                        foundMe = true;
+                        fill(255, 150, 150);
+                    } else {
+                        fill(255 - (i * 20));
+                    }
+                    let txt = (i + 1) + 'º ' + this.players[i].nickname + ' - ' + this.players[i].points + ' pontos';
+                    text(txt, VIRTUAL_WIDTH - textWidth(txt) - 20, 42 * (i + 1));
+                    tSize -= 3;
+                }
+            }
+            if (!foundMe) {
+                for (let j = 3; j < this.players.length; j++) {
+                    if (this.players[j].id == clientId) {
+                        textSize(25);
+                        fill(255, 150, 150);
+                        let txt = (j + 1) + 'º ' + this.players[j].nickname + ' - ' + this.players[j].points + ' pontos';
+                        text(txt, VIRTUAL_WIDTH - textWidth(txt) - 20, 180);
+                        break;
+                    }
+                }
+            }
         }
-        pop();
     }
 
     sortPlayers() {
@@ -292,6 +374,26 @@ class ClientGame extends Game {
         let player = new ClientPlayer();
         this.updatePlayer(player, data);
 
+        switch(player.build.basicAttack){
+            case 0:
+                player.bow = { 'color': [200, 0, 0], 'width': 1.2, 'height': 3 }
+                break;
+            case 1:
+                player.bow = { 'color': [255, 255, 0], 'width': 1.2, 'height': 3 }
+                break;
+            case 2:
+                player.bow = { 'color': [0, 0, 255], 'width': 1.5, 'height': 4 }
+                break;
+            case 3:
+                player.bow = { 'color': [100, 200, 255], 'width': 1.2, 'height': 3 }
+                break;
+            case 4:
+                player.bow = { 'color': [0, 255, 0], 'width': 0.5, 'height': 2.2 }
+                break;
+            default:
+                break;
+        }
+
         return player;
     }
 
@@ -314,7 +416,7 @@ class ClientGame extends Game {
     }
 
     buildStar(data) {
-        let star = new Star();
+        let star = new ClientStar();
         this.updateStar(star, data);
         return star;
     }
@@ -328,9 +430,11 @@ class ClientPlayer extends Player {
     constructor() {
         super();
         this.prevLife = 0;
+        this.animationBase = Math.random() * TWO_PI;
+        this.bow;
     }
 
-    display(isReference) {
+    display(isReference, deltaTime) {
 
         if (!this.active) {
             noFill();
@@ -349,21 +453,32 @@ class ClientPlayer extends Player {
             ellipse(this.pos[0], this.pos[1], SKILL_HEALAREA_DIAMETER, SKILL_HEALAREA_DIAMETER);
         }
 
-        stroke(0);
-        strokeWeight(2);
 
         if (this.imaterial == 0) {
             fill(this.color);
+            noStroke();
         } else {
             noFill();
+            stroke(0);
+            strokeWeight(2);
         }
+
+        push();
+        translate(this.pos[0], this.pos[1]);
+        rotate(this.animationBase);
+        let p = -0.707 * this.radius * 1.15;
+        let size = 0.707 * this.radius * 1.15 - p;
+        if (!this.imaterial) {
+            fill(0);
+            rect(p, p, size, size);
+        }
+        pop();
+        this.animationBase -= deltaTime * 2;
 
         ellipse(this.pos[0], this.pos[1], this.radius * 2, this.radius * 2);
 
-        let attackState = mapValue(this.attackDelay, 0, 1 / this.attackSpeed, this.radius, 0);
-        ellipse(this.pos[0] + this.aimDir[0] * attackState, this.pos[1] + this.aimDir[1] * attackState, this.radius * 0.3, this.radius * 0.3);
-        ellipse(this.pos[0] + this.aimDir[0] * this.radius, this.pos[1] + this.aimDir[1] * this.radius, this.radius * 0.4, this.radius * 0.4);
-
+        stroke(0);
+        strokeWeight(1);
         if (!this.invisible) {
             fill(255);
             textAlign(CENTER, CENTER);
@@ -385,11 +500,27 @@ class ClientPlayer extends Player {
         fill(255, 0, 0);
         rect(this.pos[0] - this.radius, this.pos[1] + this.radius * 1.1, map(this.life, 0, this.maxLife, 0, this.radius * 2), this.radius * 0.35);
 
+        noFill();
+        strokeWeight(5);
+        stroke(this.bow.color);
+        let bowW = this.radius * mapValue(this.attackDelay, 0, 1 / this.attackSpeed, this.bow.width, this.bow.width * 0.75);
+        let bowH = this.radius * mapValue(this.attackDelay, 0, 1 / this.attackSpeed, this.bow.height * 0.85, this.bow.height);
+        let lineX = mapValue(this.attackDelay, 0, 1 / this.attackSpeed, 0, this.radius);
+
+        push();
+        translate(this.pos[0], this.pos[1]);
+        rotate(-angleFromX(this.aimDir));
+        arc(this.radius, 0, bowW, bowH, -PI / 2, PI / 2, OPEN);
+        strokeWeight(1);
+        stroke(255);
+        line(this.radius, -bowH / 2, lineX, 0);
+        line(this.radius, bowH / 2, lineX, 0);
+        pop();
     }
 
     attack(deltaTime) {
         super.attack(deltaTime);
-        if (this.attackDelay == 1 / this.attackSpeed) this.attackDelay = 0;
+        //if (this.attackDelay == 1 / this.attackSpeed) this.attackDelay = 0;
     }
 
     update(deltaTime) {
@@ -408,32 +539,71 @@ class ClientProjectile extends Projectile {
     }
 
     display() {
-        stroke(0);
-        strokeWeight(2);
-        fill(this.color);
-        let dia = this.radius * 2;
-        ellipse(this.pos[0], this.pos[1], dia, dia);
+        switch (this.type) {
+            case 0:
+                stroke(0);
+                strokeWeight(2);
+                push();
+                translate(this.pos[0], this.pos[1]);
+                rotate(-angleFromX(this.dir));
+                line(0, 0, -55, 0);
+                stroke(this.color);
+                line(-60, 3, -55, 0);
+                line(-60, -3, -55, 0);
+                line(-50, 3, -45, 0);
+                line(-50, -3, -45, 0);
+                fill(this.color);
+                noStroke();
+                triangle(0, -2, 15, 0, 0, 2);
+                pop();
+                break;
+            case 1:
+                stroke(0);
+                strokeWeight(2);
+                fill(this.color);
+                let dia = this.radius * 2;
+                ellipse(this.pos[0], this.pos[1], dia, dia);
+                break;
+            default:
+                break;
+        }
+
     }
 }
 
-class Star extends GameObject {
+class ClientStar extends Star {
     constructor() {
         super();
         this.animationBase = Math.random() * TWO_PI;
     }
 
     display(deltaTime) {
-        noStroke();
-        fill(255, 255, 0);
         push();
         let p = -0.707 * this.radius;
         let size = 0.707 * this.radius - p;
         translate(this.pos[0], this.pos[1]);
+        if (this.respawn == 0) {
+            noStroke();
+            fill(255, 255, 0);
+        } else {
+            noFill();
+            strokeWeight(5);
+            stroke(255, 255, 0);
+            arc(0, 0, this.radius * 2.4, this.radius * 2.4, 0, mapValue(this.respawn, 0, this.maxRespawn, TWO_PI, 0));
+
+            stroke(0);
+            strokeWeight(1);
+        }
         rotate(this.animationBase);
         rect(p, p, size, size);
         rotate(PI / 4);
         rect(p, p, size, size);
         pop();
+
+
+
+
+
         this.animationBase += deltaTime;
     }
 }

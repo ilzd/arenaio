@@ -31,8 +31,8 @@ class Player extends GameObject {
         this.latency = 0; //player latency
         this.aimDir = [1, 0];
         this.attackSpeed = 1.5;
-        this.isAttacking = false;
         this.attackDelay = 0;
+        this.posToValidate = true;
         this.build = {
             'basicAttack': 0,
             'actives': [0, 1, 2],
@@ -85,8 +85,8 @@ class Player extends GameObject {
     }
 
     attack(deltaTime) {
-        if (!this.stunned && this.isAttacking) {
-            this.attackDelay = constrainValue(this.attackDelay + deltaTime, 0, 1 / this.attackSpeed);
+        if (!this.stunned) {
+            this.attackDelay = maxValue(0, this.attackDelay - deltaTime);
         }
     }
 
@@ -119,9 +119,11 @@ class Game {
     constructor() {
         this.mapWidth;
         this.mapHeight;
+        this.blockSize;
         this.players = [];
         this.projectiles = [];
         this.stars = [];
+        this.walls= [];
     }
 
     checkColisions() {
@@ -159,6 +161,61 @@ class Game {
                 }
             }
 
+            let x = Math.trunc(plr.pos[0] / this.blockSize), y = Math.trunc(plr.pos[1] / this.blockSize);
+
+            if(plr.posToValidate){
+                plr.posToValidate = false;
+                if (this.walls[x][y]) {
+                    this.validatePosition(plr);
+                }
+            }
+
+            for (let j = x - 1; j < x + 2; j++) {
+                if(j < 0 || j > this.mapWidth / this.blockSize - 1) continue;
+                for (let k = y - 1; k < y + 2; k++) {
+                    if(k < 0 || k > this.mapHeight / this.blockSize - 1) continue;
+
+                    if(this.walls[j][k]){
+                        let wallX = j * this.blockSize, wallY = k * this.blockSize;
+                        let cX = plr.pos[0], cY = plr.pos[1];
+                        if(cX < wallX){
+                            cX = wallX;
+                        } else if(cX > wallX + this.blockSize) {
+                            cX = wallX + this.blockSize;
+                        }
+                        if(cY < wallY){
+                            cY = wallY;
+                        } else if(cY > wallY + this.blockSize) {
+                            cY = wallY + this.blockSize;
+                        }
+                        if (distVector(plr.pos, [cX, cY]) < plr.radius) {
+                            let colisionDir = subVector(plr.pos, [cX, cY]);
+                            let colisionMag = magVector(colisionDir) - plr.radius;
+                            colisionDir = normalizeVector(colisionDir);
+                            plr.pos = subVector(plr.pos, multVector(colisionDir, colisionMag));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    validatePosition(player) {
+        let tX, tY;
+        let dist = 0;
+        let found = false;
+        while (true) {
+            dist += 5;
+            for (let ang = 0; ang <= 2 * Math.PI; ang += (2 * Math.PI) / 8) {
+                let newX = player.pos[0] + Math.cos(ang) * dist, newY = player.pos[1] + Math.sin(ang) * dist;
+                tX = Math.trunc(newX / this.blockSize), tY = Math.trunc(newY / this.blockSize);
+                if (!this.walls[tX][tY]) {
+                    found = true;
+                    player.pos = [newX, newY];
+                    break;
+                }
+            }
+            if (found) break;
         }
     }
 
@@ -170,6 +227,9 @@ class Game {
         for (let i = 0; i < this.projectiles.length; i++) {
             let proj = this.projectiles[i];
             proj.move(deltaTime);
+        }
+        for(let i = 0; i < this.stars.length; i++){
+            this.stars[i].update(deltaTime);
         }
         this.checkColisions();
     }
@@ -288,6 +348,7 @@ class Projectile extends GameObject {
         this.speed = 1200;
         this.range = 1000;
         this.traveledDistance = 0;
+        this.type = 0;
     }
 
     fixDir() {
@@ -304,9 +365,22 @@ class Projectile extends GameObject {
     }
 }
 
+class Star extends GameObject{
+    constructor(){
+        super();
+        this.respawn = 0;
+        this.maxRespawn = 25;
+    }
+
+    update(deltaTime){
+        this.respawn = maxValue(0, this.respawn - deltaTime);
+    }
+}
+
 module.exports = {
     GameObject,
     Player,
     Game,
-    Projectile
+    Projectile,
+    Star
 }
