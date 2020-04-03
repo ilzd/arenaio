@@ -31,6 +31,20 @@ class ProjDamage extends Effect {
     }
 }
 
+class DistProjDamage extends Effect{
+    constructor(proj, minDamage, maxDamage){
+        super();
+        this.proj = proj;
+        this.minDamage = minDamage;
+        this.maxDamage = maxDamage;
+    }
+
+    apply(player){
+        player.takeDamage(this.proj.owner, 
+            mapValue(this.proj.traveledDistance, 0, this.proj.range, this.minDamage, this.maxDamage));
+    } 
+}
+
 class SlowEffect extends Effect {
     constructor(value, duration){
         super();
@@ -106,6 +120,11 @@ class ProjPull extends Effect{
     }
 }
 
+function mapValue(val, min, max, minR, maxR){
+    let n1 = val - min, n2 = max - min;
+    return minR + (maxR - minR) * (n1 / n2);
+}
+
 module.exports = {
     DamageEffect,
     ProjDamage,
@@ -115,4 +134,5 @@ module.exports = {
     WaitEffect,
     ProjPush,
     ProjPull,
+    DistProjDamage
 }

@@ -390,6 +390,9 @@ class ClientGame extends Game {
             case 4:
                 player.bow = { 'color': [0, 255, 0], 'width': 0.5, 'height': 2.2 }
                 break;
+            case 5:
+                player.bow = { 'color': [255, 0, 255], 'width': 0.75, 'height': 2.5 }
+                break;
             default:
                 break;
         }

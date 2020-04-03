@@ -166,11 +166,12 @@ class Game {
                         colisionDir = normalizeVector(colisionDir);
                         plr.pos = subVector(plr.pos, multVector(colisionDir, -colisionMag * (plr2.radius / minDist)));
                         plr2.pos = subVector(plr2.pos, multVector(colisionDir, colisionMag * (plr.radius / minDist)));
-                    } else if(plr.repulses && dist < 500) {
+                    }
+                    if(plr.repulses && dist < 500) {
                         let colisionDir = subVector(plr2.pos, plr.pos);
                         colisionDir = normalizeVector(colisionDir);
-                        plr2.pos[0] += colisionDir[0] * deltaTime * 60;
-                        plr2.pos[1] += colisionDir[1] * deltaTime * 60;
+                        plr2.pos[0] += colisionDir[0] * deltaTime * 125;
+                        plr2.pos[1] += colisionDir[1] * deltaTime * 125;
                     }
 
                 }

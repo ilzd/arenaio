@@ -29,7 +29,7 @@ const StunEffect = effects.StunEffect;
 const WaitEffect = effects.WaitEffect;
 const ProjPush = effects.ProjPush;
 const ProjPull = effects.ProjPull;
-const ValidatePositionEffect = effects.ValidatePositionEffect;
+const DistProjDamage = effects.DistProjDamage;
 
 
 class ServerGame extends Game {
@@ -247,12 +247,19 @@ class ServerGame extends Game {
                     proj.pos[0] + proj.radius > this.mapWidth ||
                     proj.pos[1] - proj.radius < 0 ||
                     proj.pos[1] + proj.radius > this.mapHeight) {
-                    proj.active = false;
+
+                    if(proj.collidesWithWall) proj.active = false;
+
                 }
 
                 //checking if projectile traveled too far
                 if (proj.traveledDistance > proj.range) {
-                    proj.active = false;
+                    if(proj.shootsBack){
+                        proj.shootBack();
+                        this.io.emit('updateprojectile', {'id': proj.id, 'pos': proj.pos, 'dir': proj.dir});
+                    } else {
+                        proj.active = false;
+                    }
                 }
 
                 for (let j = 0; j < this.players.length; j++) {
@@ -273,38 +280,41 @@ class ServerGame extends Game {
                             }
 
                         } else {
-                            if (distVector(proj.pos, plr.pos) < proj.radius + plr.radius) {
+                            let dist = distVector(proj.pos, plr.pos);
+                            if (dist < proj.radius + plr.radius) {
                                 proj.hit(plr);
                             }
                         }
                     }
                 }
 
-                let x = Math.trunc(proj.pos[0] / this.blockSize), y = Math.trunc(proj.pos[1] / this.blockSize);
+                if (proj.collidesWithWall) {
+                    let x = Math.trunc(proj.pos[0] / this.blockSize), y = Math.trunc(proj.pos[1] / this.blockSize);
 
-                for (let j = x - 1; j < x + 2; j++) {
-                    if (j < 0 || j > this.mapWidth / this.blockSize - 1) continue;
-                    for (let k = y - 1; k < y + 2; k++) {
-                        if (k < 0 || k > this.mapHeight / this.blockSize - 1) continue;
+                    for (let j = x - 1; j < x + 2; j++) {
+                        if (j < 0 || j > this.mapWidth / this.blockSize - 1) continue;
+                        for (let k = y - 1; k < y + 2; k++) {
+                            if (k < 0 || k > this.mapHeight / this.blockSize - 1) continue;
 
-                        if (this.walls[j][k]) {
-                            let wallX = j * this.blockSize, wallY = k * this.blockSize;
-                            let cX = proj.pos[0], cY = proj.pos[1];
-                            if (cX < wallX) {
-                                cX = wallX;
-                            } else if (cX > wallX + this.blockSize) {
-                                cX = wallX + this.blockSize;
+                            if (this.walls[j][k]) {
+                                let wallX = j * this.blockSize, wallY = k * this.blockSize;
+                                let cX = proj.pos[0], cY = proj.pos[1];
+                                if (cX < wallX) {
+                                    cX = wallX;
+                                } else if (cX > wallX + this.blockSize) {
+                                    cX = wallX + this.blockSize;
+                                }
+                                if (cY < wallY) {
+                                    cY = wallY;
+                                } else if (cY > wallY + this.blockSize) {
+                                    cY = wallY + this.blockSize;
+                                }
+                                if (distVector(proj.pos, [cX, cY]) < proj.radius) {
+                                    proj.active = false;
+                                }
                             }
-                            if (cY < wallY) {
-                                cY = wallY;
-                            } else if (cY > wallY + this.blockSize) {
-                                cY = wallY + this.blockSize;
-                            }
-                            if (distVector(proj.pos, [cX, cY]) < proj.radius) {
-                                proj.active = false;
-                            }
+
                         }
-
                     }
                 }
 
@@ -420,7 +430,7 @@ class ServerGame extends Game {
                 }
                 proj = this.buildProjectile(player.id, projData);
 
-                proj.effects.push(new ProjDamage(proj, 35));
+                proj.effects.push(new DistProjDamage(proj, 10, 45));
 
                 this.addProjectile(proj);
                 this.io.emit('newprojectile', projData);
@@ -465,6 +475,28 @@ class ServerGame extends Game {
                 this.io.emit('newprojectile', projData);
 
                 break;
+            case 5:
+                projData = {
+                    'id': this.getNewUniqueId(),
+                    'color': [255, 0, 255],
+                    'speed': 1500,
+                    'range': 650,
+                    'radius': 4,
+                    'type': 0,
+                    'collidesWithWall': false,
+                    'pierces': true,
+                    'shootsBack': true,
+                    'pos': [player.pos[0] + player.aimDir[0] * player.radius, player.pos[1] + player.aimDir[1] * player.radius],
+                    'dir': [player.aimDir[0], player.aimDir[1]],
+                }
+                proj = this.buildProjectile(player.id, projData);
+
+                proj.effects.push(new ProjDamage(proj, 15));
+
+                this.addProjectile(proj);
+                this.io.emit('newprojectile', projData);
+
+                break;
             default:
                 break;
         }
@@ -492,8 +524,8 @@ class ServerGame extends Game {
                             this.io.emit('update', { 'id': player.id, 'pos': player.pos, 'posToValidate': player.posToValidate });
                             break;
                         case 1:
-                            player.addSlowEffect(0.2, 0.5);
-                            let wait = new WaitEffect(new FastEffect(2, 1), 0.5);
+                            player.addSlowEffect(0.2, 0.3);
+                            let wait = new WaitEffect(new FastEffect(2, 1.3), 0.3);
                             player.waitEffects.push(wait);
                             break;
                         case 2:
@@ -502,14 +534,15 @@ class ServerGame extends Game {
                                 'color': [0, 0, 0],
                                 'speed': 500,
                                 'range': 750,
-                                'radius': 60,
+                                'radius': 70,
                                 'type': 1,
+                                'collidesWithWall': false,
                                 'pos': [player.pos[0] + player.aimDir[0] * player.radius, player.pos[1] + player.aimDir[1] * player.radius],
                                 'dir': [player.aimDir[0], player.aimDir[1]],
                             }
                             proj = this.buildProjectile(player.id, projData);
 
-                            proj.effects.push(new StunEffect(1.3));
+                            proj.effects.push(new StunEffect(1.4));
 
                             this.addProjectile(proj);
                             this.io.emit('newprojectile', projData);
@@ -538,7 +571,7 @@ class ServerGame extends Game {
                                     'color': [127, 255, 127],
                                     'speed': 800,
                                     'range': 450,
-                                    'radius': 9,
+                                    'radius': 8,
                                     'type': 1,
                                     'pos': [player.pos[0] + player.aimDir[0] * player.radius, player.pos[1] + player.aimDir[1] * player.radius],
                                     'dir': projDir,
@@ -557,7 +590,7 @@ class ServerGame extends Game {
                                 'color': [0, 127, 127],
                                 'speed': 1400,
                                 'range': 600,
-                                'radius': 45,
+                                'radius': 20,
                                 'type': 1,
                                 'pos': [player.pos[0] + player.aimDir[0] * player.radius, player.pos[1] + player.aimDir[1] * player.radius],
                                 'dir': [player.aimDir[0], player.aimDir[1]],
@@ -626,13 +659,16 @@ class ServerGame extends Game {
                 attackSpeed = 1.5;
                 break;
             case 2:
-                attackSpeed = 0.8;
+                attackSpeed = 0.7;
                 break;
             case 3:
                 attackSpeed = 1.75;
                 break;
             case 4:
                 attackSpeed = 3;
+                break;
+            case 5:
+                attackSpeed = 1.5;
                 break;
             default:
                 break;
@@ -1006,19 +1042,46 @@ class ServerProjectile extends Projectile {
         this.owner = owner;
         this.effects = [];
         this.active = true;
+        this.collidesWithWall = true;
+        this.pierces = false;
+        this.playersHit = [];
+        this.shootsBack = false;
     }
 
     hit(player) {
         if (!player.active) return;
-        for (let i = 0; i < this.effects.length; i++) {
-            this.effects[i].apply(player);
+        if (!this.hitPlayer(player.id)) {
+            for (let i = 0; i < this.effects.length; i++) {
+                this.effects[i].apply(player);
+            }
+            this.playersHit.push(player);
         }
-        this.active = false;
+        if(!this.pierces) this.active = false;
+    }
+
+    hitPlayer(id){
+        let did = false;
+        for(let i = 0; i < this.playersHit.length; i++){
+            if(this.playersHit[i].id == id){
+                did = true;
+                break;
+            }
+        }
+        return did;
     }
 
     move(deltaTime) {
         super.move(deltaTime);
         this.traveledDistance += deltaTime * this.speed;
+    }
+
+    shootBack() {
+        this.shootsBack = false;
+        this.playersHit = [];
+        this.traveledDistance = 0;
+        this.range = distVector(this.pos, this.owner.pos);
+        this.dir = subVector(this.owner.pos, this.pos);
+        this.fixDir();
     }
 }
 
