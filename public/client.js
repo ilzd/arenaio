@@ -14,11 +14,31 @@ var inGame = false;
 
 var canvas, form;
 
-var skillsImgs = [];
+var skillsInfo = [];
+var passivesInfo = [];
+var bowsInfo = [];
+var actives = [0, 1, 2];
+var passives = [0, 1];
+var weapon = 0;
 
-function preload(){
-    for(let i = 0; i < 10; i++){
-        skillsImgs.push(loadImage('images/skill' + i + '.png'));
+function preload() {
+    for (let i = 0; i < 10; i++) {
+        skillsInfo[i] = {
+            'image': loadImage('./images/skill' + i + '.png'),
+            'description': getSkillDescription(i)
+        };
+    }
+    for (let i = 0; i < 5; i++) {
+        passivesInfo[i] = {
+            'image': loadImage('./images/passive' + i + '.png'),
+            'description': getPassiveDescription(i)
+        };
+    }
+    for (let i = 0; i < 6; i++) {
+        bowsInfo[i] = {
+            'image': loadImage('./images/bow' + i + '.png'),
+            'description': getBowDescription(i)
+        };
     }
 }
 
@@ -42,24 +62,215 @@ function setup() {
     form = document.getElementById('form');
     canvas = document.getElementById('defaultCanvas0');
     canvas.style.display = 'none';
+
+    buildForm();
+}
+
+function getBowDescription(bow) {
+    let result = 'This skill does something awesome';
+    switch (bow) {
+        case 0:
+            result = 'Arco simples: Faz de tudo, mas nada com excelência';
+            break;
+        case 1:
+            result = 'Besta pesada: Dispara inúmeras flechas de curto alcance que se espalham em um cone a sua frente';
+            break;
+        case 2:
+            result = 'Arco do caçador: Dispara uma flecha precisa que ganha força enquanto viaja';
+            break;
+        case 3:
+            result = 'Arco gélico: Suas flechas causam lentidão';
+            break;
+        case 4:
+            result = 'Arco pequeno: Sua velocidade compensa sua força';
+            break;
+        case 5:
+            result = 'Arco magnético: Suas flechas vão e vem enquanto perfuram paredes e inimigos';
+            break;
+        case 5:
+            result = 'Você empurra para longe os inimigos que estão próximos a você';
+            break;
+        default:
+            break;
+    }
+
+    return result;
+}
+
+function getSkillDescription(skill) {
+    let result = 'This skill does something awesome';
+    switch (skill) {
+        case 0:
+            result = 'Realiza um teletransporte curto na direção do cursor';
+            break;
+        case 1:
+            result = 'Após um breve momento de lentidão, concede ume explosão de velocidade de movimento por um curto período de tempo';
+            break;
+        case 2:
+            result = 'Dispara um projétil que atravessa paredes e atordoa o primeiro alvo que atingir';
+            break;
+        case 3:
+            result = 'Cria um escudo a sua volta que reflete os projéteis com os quais colide';
+            break;
+        case 4:
+            result = 'Te torna invisível por um curto período de tempo';
+            break;
+        case 5:
+            result = 'Te torna imaterial por um curto período de tempo, ignorando todos os tipos de colisão';
+            break;
+        case 6:
+            result = 'Dispara projéteis a sua frente que empurram os inimigos que forem atingidos';
+            break;
+        case 7:
+            result = 'Dispara um projétil que puxa para perto o primeiro inimigo que atingir';
+            break;
+        case 8:
+            result = 'Cria uma área de cura a sua volta que regenera a vida de todos os jogadores próximos';
+            break;
+        case 9:
+            result = 'Desliza rapidamente na direção do cursor';
+            break;
+        default:
+            break;
+    }
+
+    return result;
+}
+
+function getPassiveDescription(passive) {
+    let result = 'This skill does something awesome';
+    switch (passive) {
+        case 0:
+            result = 'Recarregar seu arco não mais te deixa lento';
+            break;
+        case 1:
+            result = 'Sua regeneração de vida é significativamente maior';
+            break;
+        case 2:
+            result = 'Sua velocidade de movimento é significativamente maior';
+            break;
+        case 3:
+            result = 'A velocidade de recarga do seu arco e significativamente maior';
+            break;
+        case 4:
+            result = 'Você empurra para longe os inimigos que estão próximos a você';
+            break;
+        default:
+            break;
+    }
+
+    return result;
+}
+
+function buildForm() {
+    let bowDiv = document.getElementById('bowImages');
+    let bowInfo = document.getElementById('bowInfo');
+    for (let j = 0; j < 6; j++) {
+        let bow = new Image();
+        bow.src = './images/bow' + j + '.png';
+        bow.style.margin = 4;
+        bow.width = 50;
+        bow.classList.add('bow');
+        if (j == 0) {
+            bow.classList.add('selected');
+            bowInfo.textContent = getBowDescription(j);
+        }
+        bow.addEventListener('click', function () {
+            weapon = j;
+            let els = document.getElementsByClassName('bow');
+            for (let k = 0; k < els.length; k++) {
+                els[k].classList.remove('selected');
+            }
+            bow.classList.add('selected');
+            bowInfo.textContent = getBowDescription(j);
+        });
+        bowDiv.appendChild(bow);
+    }
+
+    for (let i = 0; i < 3; i++) {
+        let skillsDiv = document.getElementById('skillImages' + i);
+        let skillInfo = document.getElementById('skillInfo' + i);
+        for (let j = 0; j < 10; j++) {
+            let skill = new Image();
+            skill.src = './images/skill' + j + '.png';
+            skill.style.margin = 4;
+            skill.width = 50;
+            skill.classList.add('skill' + i);
+            if (j == i) { 
+                skill.classList.add('selected');
+                skillInfo.textContent = getSkillDescription(j);
+             }
+            skill.addEventListener('click', function () {
+                let validated = true;
+                for(let k = 0; k < actives.length; k++){
+                    if(actives[k] == j){
+                        validated = false;
+                        break;
+                    }
+                }
+
+                if (validated) {
+                    actives[i] = j;
+                    let els = document.getElementsByClassName('skill' + i);
+                    for (let k = 0; k < els.length; k++) {
+                        els[k].classList.remove('selected');
+                    }
+                    skill.classList.add('selected');
+                    skillInfo.textContent = getSkillDescription(j);
+                }
+            });
+            skillsDiv.appendChild(skill);
+        }
+    }
+
+    for (let i = 0; i < 2; i++) {
+        let passiveDiv = document.getElementById('passiveImages' + i);
+        let passiveInfo = document.getElementById('passiveInfo' + i);
+        for (let j = 0; j < 5; j++) {
+            let passive = new Image();
+            passive.src = './images/passive' + j + '.png';
+            passive.style.margin = 4;
+            passive.width = 50;
+            passive.classList.add('passive' + i);
+            if (j == i) {
+                passive.classList.add('selected');
+                passiveInfo.textContent = getPassiveDescription(j);
+            }
+            passive.addEventListener('click', function () {
+                let validated = true;
+                for(let k = 0; k < passives.length; k++){
+                    if(passives[k] == j){
+                        validated = false;
+                        break;
+                    }
+                }
+
+                if (validated) {
+                    passives[i] = j;
+                    let els = document.getElementsByClassName('passive' + i);
+                    for (let k = 0; k < els.length; k++) {
+                        els[k].classList.remove('selected');
+                    }
+                    passive.classList.add('selected');
+                    passiveInfo.textContent = getPassiveDescription(j);
+                }
+            });
+            passiveDiv.appendChild(passive);
+        }
+    }
 }
 
 function sendForm() {
     let color = hexToRgb(document.getElementById('color').value);
-    let active0 = (int)(document.getElementById('active0').value);
-    let active1 = (int)(document.getElementById('active1').value);
-    let active2 = (int)(document.getElementById('active2').value);
-    let passive0 = (int)(document.getElementById('passive0').value);
-    let passive1 = (int)(document.getElementById('passive1').value);
 
     socket.emit('joinrequest', {
         'nickname': document.getElementById('nickname').value,
         'color': [color.r, color.g, color.b],
         'radius': 50,
         'build': {
-            'basicAttack': (int)(document.getElementById('basicAttack').value),
-            'actives': [active0, active1, active2],
-            'passives': [passive0, passive1]
+            'basicAttack': weapon,
+            'actives': actives,
+            'passives': passives
         }
     });
 
@@ -70,9 +281,9 @@ function sendForm() {
 function hexToRgb(hex) {
     var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return result ? {
-      r: parseInt(result[1], 16),
-      g: parseInt(result[2], 16),
-      b: parseInt(result[3], 16)
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
     } : null;
 }
 
@@ -107,7 +318,7 @@ function registerEvents() {
         }
     });
 
-    socket.on('updateprojectile', function(data){
+    socket.on('updateprojectile', function (data) {
         if (inGame) {
             for (let i = 0; i < game.projectiles.length; i++) {
                 if (game.projectiles[i].id == data.id) {
@@ -117,7 +328,7 @@ function registerEvents() {
             }
         }
     });
-    
+
     socket.on('pingtest', function () {
         socket.emit('pingtest');
     });
@@ -135,7 +346,7 @@ function registerEvents() {
             game.walls = data;
             for (let i = 0; i < game.walls.length; i++) {
                 for (let j = 0; j < game.walls[0].length; j++) {
-                    if(!game.walls[i][j]) continue;
+                    if (!game.walls[i][j]) continue;
                     let value = map(dist(i, j, (MAP_HORIZONTAL_SQUARES - 1) / 2, (MAP_VERTICAL_SQUARES - 1) / 2),
                         0, dist(0, 0, (MAP_HORIZONTAL_SQUARES - 1) / 2, (MAP_VERTICAL_SQUARES - 1) / 2),
                         1, 0)
@@ -145,7 +356,7 @@ function registerEvents() {
         }
     });
 
-    socket.on('updatestar', function(data){
+    socket.on('updatestar', function (data) {
         if (inGame) {
             for (let i = 0; i < game.stars.length; i++) {
                 if (game.stars[i].id == data.id) {
@@ -164,12 +375,12 @@ function registerEvents() {
         if (inGame) game.removeStar(data.id);
     });
 
-    socket.on('chatmessage', function(data){
-        if(inGame) game.addChatMessage(data.message);
+    socket.on('chatmessage', function (data) {
+        if (inGame) game.addChatMessage(data.message);
     });
 
-    socket.on('announcement', function(data){
-        if(inGame) game.addAnnouncement(data.message);
+    socket.on('announcement', function (data) {
+        if (inGame) game.addAnnouncement(data.message);
     });
 }
 
@@ -184,11 +395,11 @@ function draw() {
     push();
     adaptScreen();
     push()
-    if(inGame)game.update(deltaTime);
+    if (inGame) game.update(deltaTime);
     pop();
-    if(inGame) if(game.inGame) game.drawUI();
-    if(inGame) game.displayChat(deltaTime);
-    if(inGame) game.displayAnnouncements(deltaTime);
+    if (inGame) if (game.inGame) game.drawUI();
+    if (inGame) game.displayChat(deltaTime);
+    if (inGame) game.displayAnnouncements(deltaTime);
     if (inGame) game.drawRanking();
     drawStats();
     pop();

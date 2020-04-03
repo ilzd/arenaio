@@ -4,9 +4,71 @@
     <title>Arena</title>
     <meta charset="UTF-8">
     <style>
-        body{
+        body {
             margin: 0;
             padding: 0;
+            background-color: #0a3869;
+            text-align: center;
+            color: #FFF;
+            font-size: 1.5em;
+            font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+        }
+
+        .selected{
+            border: 2px solid yellow;
+            width: 70px;
+        }
+
+        #login{
+            padding: 16px;
+            background-color: darkred;
+            display: inline-block;
+        }
+
+        #login:hover{
+            background-color: red;
+            cursor: pointer;
+        }
+
+        h1{
+            margin: 0 0 16px 0;
+        }
+
+        h3{
+            margin: 8px;
+        }
+
+        #nickname {
+            padding: 8px;
+            margin: 4px;
+            text-align: center;
+            font-size: 1.1em;
+        }
+
+        #color{
+            width: 100px;
+            height: 40px;
+        }
+
+        #form{
+            margin: 32px;
+            padding: 32px;
+        }
+
+        #nicknameDiv, #colorDiv{
+            display: inline-block;
+            width: 300px;
+            margin: 8px;
+        }
+
+        .buildSection{
+            margin: 32px;
+        }
+
+        .info{
+            border: 1px solid red;
+            padding: 4px;
+            margin: 4px;
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
@@ -17,203 +79,53 @@
     <script src="utilsC.js"></script>
     <script src="clientLayer.js"></script>
     <script src="client.js"></script>
-    
+
 </head>
 
 <body oncontextmenu="return false;">
-    <div id="form" style="padding: 20px">
-        <label for="nickname">Nickname</label><br/>
-        <input id="nickname" maxlength="10" value='Player'/>
+    <div id="form">
+        <h1>Arena.IO</h1>
+        <div class='buildSection' id="nicknameDiv">
+            <label for="nickname">Digite seu apelido</label><br />
+            <input id="nickname" maxlength="10" value='Player' /><br />
+        </div>
 
-        <br/>
-        <br/>
-        <br/>
+        <div class='buildSection' id="colorDiv">
+            <label for="color">Cor</label><br />
+            <input id='color' type='color' value='#ff0000' />
+        </div>
 
-        <label for="basicAttack">Arma (Botão esquerdo do mouse)</label><br/>
-        <select id="basicAttack">
-            <option value='0'>
-                Pistola equilibrada: Velocidade de ataque: Médio, Dano: Médio, Alcance: Médio, Diametro: Médio, Quantidade: 1
-            </option>
-            <option value='1'>
-                Escopeta: Velocidade de ataque: Médio, Dano: Muito Baixo, Alcance: Baixo, Diametro: Pequeno, Quantidade: 30
-            </option>
-            <option value='2'>
-                Arco longo: Dispara uma flecha que ganha força enquanto viaja. Tempo de recarga muito alto.
-            </option>
-            <option value='3'>
-                Pistola de gelo: Velocidade de ataque: Médio-Alto, Dano: Baixo-Médio, Alcance: Médio, Diametro: Médio, Quantidade: 1, Efeito: Lentidão
-            </option>
-            <option value='4'>
-                Rifle rápida: Velocidade de ataque: Alta, Dano: Muito Baixo, Alcance: Médio, Diametro: Médio, Quantidade: 1
-            </option>
-            <option value='5'>
-                Arco boomerangue: Atira uma flecha perfurante que retorna ao chegar em seu alcance máximo.
-            </option>
-        </select>
+        <hr>
 
-        <br/>
-        <br/>
-        <br/>
+        <div class='buildSection' id='bow'><h3>Escolha seu arco</h3>
+            <div id='bowImages'></div>
+            <div id='bowInfo' class='info'></div>
+        </div>
 
-        <label for="active0">Habilidade Ativa 1 (Botão direito do mouse)</label><br/>
-        <select id="active0">
-            <option value='0' selected>
-                Salto interdimensional: Realiza um teletransporte de curta distância na sua direção de movimento.
-            </option>
-            <option value='1'>
-                Ímpeto: Recebe lentidão por um curto período de tempo para depois receber uma explosão de velocidade por um curto período de tempo.
-            </option>
-            <option value='2'>
-                Disparo atordoante: Dispara um  projétil que atravessa paredes e atordoa quem for atingido.
-            </option>
-            <option value='3'>
-                Escudo de Zitor: Ganhe um escudo por um curto período de tempo que reflete todos os projéteis que o atingirem.
-            </option>
-            <option value='4'>
-                Camuflar-se: Se torne invisível por um curto período de tempo.
-            </option>
-            <option value='5'>
-                Desmaterializar-se: Se torne imaterial por um curto período de tempo ignorando colisões.
-            </option>
-            <option value='6'>
-                Empurrão: Dispara um projétil que empurra os alvos atingidos.
-            </option>
-            <option value='7'>
-                Puxão: Dispara um projétil que puxa os alvos atingidos.
-            </option>
-            <option value='8'>
-                Ritual de cura: Cura todos os jogadores próximos por um médio período de tempo.
-            </option>
-            <option value='9'>
-                Avanço rápido: Desliza rapidamente por uma distância média na direção de movimento.
-            </option>
-        </select>
-        <br/>
-        <br/>
-        <label for="active1">Habilidade Ativa 2 (Tecla E)</label><br/>
-        <select id="active1">
-            <option value='0'>
-                Salto interdimensional: Realiza um teletransporte de curta distância na sua direção de movimento.
-            </option>
-            <option value='1' selected>
-                Ímpeto: Recebe lentidão por um curto período de tempo para depois receber uma explosão de velocidade por um curto período de tempo.
-            </option>
-            <option value='2'>
-                Disparo atordoante: Dispara um  projétil que atravessa paredes e atordoa quem for atingido.
-            </option>
-            <option value='3'>
-                Escudo de Zitor: Ganhe um escudo por um curto período de tempo que reflete todos os projéteis que o atingirem.
-            </option>
-            <option value='4'>
-                Camuflar-se: Se torne invisível por um curto período de tempo.
-            </option>
-            <option value='5'>
-                Desmaterializar-se: Se torne imaterial por um curto período de tempo ignorando colisões.
-            </option>
-            <option value='6'>
-                Empurrão: Dispara um projétil que empurra os alvos atingidos.
-            </option>
-            <option value='7'>
-                Puxão: Dispara um projétil que puxa os alvos atingidos.
-            </option>
-            <option value='8'>
-                Ritual de cura: Cura todos os jogadores próximos por um médio período de tempo.
-            </option>
-            <option value='9'>
-                Avanço rápido: Desliza rapidamente por uma distância média na direção de movimento.
-            </option>
-        </select>
-        <br/>
-        <br/>
-        <label for="active2">Habilidade Ativa 3 (Tecla Espaço)</label><br/>
-        <select id="active2">
-            <option value='0'>
-                Salto interdimensional: Realiza um teletransporte de curta distância na sua direção de movimento.
-            </option>
-            <option value='1'>
-                Ímpeto: Recebe lentidão por um curto período de tempo para depois receber uma explosão de velocidade por um curto período de tempo.
-            </option>
-            <option value='2' selected>
-                Disparo atordoante: Dispara um  projétil que atravessa paredes e atordoa quem for atingido.
-            </option>
-            <option value='3'>
-                Escudo de Zitor: Ganhe um escudo por um curto período de tempo que reflete todos os projéteis que o atingirem.
-            </option>
-            <option value='4'>
-                Camuflar-se: Se torne invisível por um curto período de tempo.
-            </option>
-            <option value='5'>
-                Desmaterializar-se: Se torne imaterial por um curto período de tempo ignorando colisões.
-            </option>
-            <option value='6'>
-                Empurrão: Dispara um projétil que empurra os alvos atingidos.
-            </option>
-            <option value='7'>
-                Puxão: Dispara um projétil que puxa os alvos atingidos.
-            </option>
-            <option value='8'>
-                Ritual de cura: Cura todos os jogadores próximos por um médio período de tempo.
-            </option>
-            <option value='9'>
-                Avanço rápido: Desliza rapidamente por uma distância média na direção de movimento.
-            </option>
-        </select>
-        
-        <br/>
-        <br/>
-        <br/>
+        <hr>
 
-        <label for="color">Cor</label><br/>
-        <input id='color' type='color' value='#ff0000'/>
+        <div class='buildSection' id='skill0'><h3>Escolha sua primeira skill (atalho: RMB)</h3>
+            <div id='skillImages0'></div>
+            <div id='skillInfo0' class='info'></div>
+        </div>
+        <div class='buildSection' id='skill1'><h3>Escolha sua segunda skill (atalho: E)</h3>
+            <div id='skillImages1'></div>
+            <div id='skillInfo1' class='info'></div>
+        </div>
+        <div class='buildSection' id='skill2'><h3>Escolha sua terceira skill (atalho: ESPAÇO)</h3>
+            <div id='skillImages2'></div>
+            <div id='skillInfo2' class='info'></div>
+        </div>
+        <div class='buildSection' id='passive0'><h3>Escolha sua primeira passiva</h3>
+            <div id='passiveImages0'></div>
+            <div id='passiveInfo0' class='info'></div>
+        </div>
+        <div class='buildSection' id='passive1'><h3>Escolha sua segunda passiva</h3>
+            <div id='passiveImages1'></div>
+            <div id='passiveInfo1' class='info'></div>
+        </div>
 
-        <br/>
-        <br/>
-        <br/>
-
-        <label for="passive0">Habilidade Passiva 1</label><br/>
-        <select id="passive0">
-            <option value='0' selected>
-                Eficiência: Recarregue sua arma sem ficar lento
-            </option>
-            <option value='1'>
-                Resiliência: Sua regeneração de vida é maior
-            </option>
-            <option value='2'>
-                Mobilidade: Sua velocidade de movimento é maior
-            </option>
-            <option value='3'>
-                Agilidade: Sua velocidade de recarregamento é maior
-            </option>
-            <option value='4'>
-                Repulsão: Você constantemente empurra inimigos próximos para longe de você
-            </option>
-        </select>
-        <br/>
-        <br/>
-        <label for="passive1">Habilidade Passiva 1</label><br/>
-        <select id="passive1">
-            <option value='0'>
-                Eficiência: Recarregue sua arma sem ficar lento
-            </option>
-            <option value='1' selected>
-                Resiliência: Sua regeneração de vida é aumentada substancialmente
-            </option>
-            <option value='2'>
-                Mobilidade: Sua velocidade de movimento é maior
-            </option>
-            <option value='3'>
-                Agilidade: Sua velocidade de recarregamento é maior
-            </option>
-            <option value='4'>
-                Repulsão: Você constantemente empurra inimigos próximos para longe de você
-            </option>
-        </select>
-
-        <br/>
-        <br/>
-        <br/>
-
-        <button onclick="sendForm()">Entrar</button>
+        <p id='login' onclick="sendForm()">ENTRAR</p>
     </div>
 </body>
 

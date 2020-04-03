@@ -151,7 +151,7 @@ class ClientGame extends Game {
                 tint(100);
             }
 
-            image(skillsImgs[skill.skill], SKILLS_IMAGENS_POS_X + i * 100, SKILLS_IMAGENS_POS_Y, 80, 80);
+            image(skillsInfo[skill.skill].image, SKILLS_IMAGENS_POS_X + i * 100, SKILLS_IMAGENS_POS_Y, 80, 80);
 
             noStroke();
             fill(0);

@@ -212,7 +212,7 @@ class ServerGame extends Game {
                 if (!str.respawn == 0) return;
 
                 if (distVector(plr.pos, str.pos) < plr.radius + str.radius) {
-                    plr.points += 5;
+                    plr.points += 3;
                     str.respawn = str.maxRespawn;
                     this.io.emit('update', { 'id': plr.id, 'points': plr.points });
                     this.io.emit('updatestar', { 'id': str.id, 'respawn': str.respawn });
@@ -959,7 +959,7 @@ class ServerPlayer extends Player {
         if (this.life == 0) {
             source.points++;
             this.active = false;
-            this.points = maxValue(0, this.points - 1);
+            this.points = 0;//maxValue(0, this.points - 1);
             this.messages.push({
                 'type': 'update',
                 'data': { 'id': this.id, 'points': this.points, 'active': this.active }
