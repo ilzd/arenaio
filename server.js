@@ -116,7 +116,7 @@ io.sockets.on(
 server.listen(port);
 
 setInterval(update, 1);
-setInterval(updateImportant, 1000 / 4);
+setInterval(syncPositions, 1000 / 4);
 
 var deltaTime = 0; //variation in time since last tick
 var prevDate = Date.now(); //last date saved, used to calculate deltaTime
@@ -129,14 +129,17 @@ function update() {
     //console.log(deltaTime);'
 }
 
-function updateImportant() {
+function syncPositions() {
     for (let i = 0; i < game.players.length; i++) {
         let player = game.players[i];
+        let expectedPos = player.getNextPosition(player.latency);
         io.emit('update', {
             'id': player.id,
-            'pos': player.pos
+            'pos': player.pos,
+            'posDesync': [expectedPos[0] - player.pos[0], expectedPos[1] - player.pos[1]]
         });
     }
+   
 }
 
 function calculateDeltaTime() {
