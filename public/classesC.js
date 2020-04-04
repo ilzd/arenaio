@@ -128,7 +128,7 @@ class Game {
         //related to players
         for (let i = 0; i < this.players.length; i++) {
             let plr = this.players[i];
-            if(!plr.active || plr.imaterial > 0) continue;
+            if(!plr.active) continue;
 
             //checking colision between players and map extremes
             if (plr.pos[0] - plr.radius < 0) {
@@ -142,6 +142,8 @@ class Game {
                 plr.pos[1] = this.mapHeight - plr.radius;
             }
 
+            if(plr.imaterial > 0) return;
+
             //checking colision between players (maybe keep this only in the server)
             for (let j = 0; j < this.players.length; j++) {
                 let plr2 = this.players[j];
@@ -149,8 +151,8 @@ class Game {
 
                 if (i != j) {
                     let minDist = plr.radius + plr2.radius;
-                    let dist = distVector(plr.pos, plr2.pos);
-                    if (dist < minDist) {
+                    let dist = distVectorSqr(plr.pos, plr2.pos);
+                    if (dist < minDist * minDist) {
                         let colisionDir = subVector(plr2.pos, plr.pos);
                         let colisionMag = magVector(colisionDir) - minDist;
                         colisionDir = normalizeVector(colisionDir);
@@ -194,7 +196,7 @@ class Game {
                         } else if(cY > wallY + this.blockSize) {
                             cY = wallY + this.blockSize;
                         }
-                        if (distVector(plr.pos, [cX, cY]) < plr.radius) {
+                        if (distVectorSqr(plr.pos, [cX, cY]) < plr.radius * plr.radius) {
                             let colisionDir = subVector(plr.pos, [cX, cY]);
                             let colisionMag = magVector(colisionDir) - plr.radius;
                             colisionDir = normalizeVector(colisionDir);
@@ -213,7 +215,8 @@ class Game {
         while (true) {
             dist += 5;
             for (let ang = 0; ang <= 2 * Math.PI; ang += (2 * Math.PI) / 8) {
-                let newX = player.pos[0] + Math.cos(ang) * dist, newY = player.pos[1] + Math.sin(ang) * dist;
+                let newX = constrainValue(player.pos[0] + Math.cos(ang) * dist, 0, this.mapWidth - 1);
+                let newY = constrainValue(player.pos[1] + Math.sin(ang) * dist, 0, this.mapHeight - 1);
                 tX = Math.trunc(newX / this.blockSize), tY = Math.trunc(newY / this.blockSize);
                 if (!this.walls[tX][tY]) {
                     found = true;

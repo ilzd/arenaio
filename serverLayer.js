@@ -5,8 +5,10 @@ const consts = require('./constsS.js');
 
 const normalizeVector = utils.normalizeVector;
 const distVector = utils.distVector;
+const distVectorSqr = utils.distVectorSqr;
 const subVector = utils.subVector;
 const magVector = utils.magVector;
+const magVectorSqr = utils.magVectorSqr;
 const multVector = utils.multVector;
 const constrainValue = utils.constrainValue;
 const maxValue = utils.maxValue;
@@ -211,7 +213,8 @@ class ServerGame extends Game {
                 let str = this.stars[j];
                 if (!str.respawn == 0) return;
 
-                if (distVector(plr.pos, str.pos) < plr.radius + str.radius) {
+                let minDist = plr.radius + str.radius;
+                if (distVectorSqr(plr.pos, str.pos) < minDist * minDist) {
                     plr.points += 3;
                     str.respawn = str.maxRespawn;
                     this.io.emit('update', { 'id': plr.id, 'points': plr.points });
@@ -269,7 +272,7 @@ class ServerGame extends Game {
 
                             let minDist = plr.radius + proj.radius + consts.SKILL_ZITOR_SHIELD_EXTRA_RADIUS;
 
-                            if (distVector(plr.pos, proj.pos) < minDist) {
+                            if (distVectorSqr(plr.pos, proj.pos) < minDist * minDist) {
                                 let colisionDir = subVector(proj.pos, plr.pos);
                                 colisionDir = normalizeVector(colisionDir);
                                 proj.owner = plr;
@@ -280,8 +283,8 @@ class ServerGame extends Game {
                             }
 
                         } else {
-                            let dist = distVector(proj.pos, plr.pos);
-                            if (dist < proj.radius + plr.radius) {
+                            let minDist = proj.radius + plr.radius;
+                            if (distVectorSqr(proj.pos, plr.pos) < minDist * minDist) {
                                 proj.hit(plr);
                             }
                         }
@@ -309,7 +312,7 @@ class ServerGame extends Game {
                                 } else if (cY > wallY + this.blockSize) {
                                     cY = wallY + this.blockSize;
                                 }
-                                if (distVector(proj.pos, [cX, cY]) < proj.radius) {
+                                if (distVectorSqr(proj.pos, [cX, cY]) < proj.radius * proj.radius) {
                                     proj.active = false;
                                 }
                             }
@@ -839,7 +842,8 @@ class ServerPlayer extends Player {
             let player = this.game.players[i];
             if (!player.active) return;
 
-            if (distVector(this.pos, player.pos) < consts.SKILL_HEALAREA_RADIUS + player.radius) {
+            let minDist = consts.SKILL_HEALAREA_RADIUS + player.radius;
+            if (distVectorSqr(this.pos, player.pos) < minDist * minDist) {
                 player.heal(consts.SKILL_HEALAREA_HEALPERSECOND * deltaTime);
             }
         }
@@ -959,7 +963,7 @@ class ServerPlayer extends Player {
         if (this.life == 0) {
             source.points++;
             this.active = false;
-            this.points = 0;//maxValue(0, this.points - 1);
+            this.points = Math.trunc(this.points / 2);
             this.messages.push({
                 'type': 'update',
                 'data': { 'id': this.id, 'points': this.points, 'active': this.active }
