@@ -442,7 +442,7 @@ class ClientPlayer extends Player {
         this.animationBase = Math.random() * TWO_PI;
         this.bow;
         this.posDesync = [0, 0];
-        this.syncSpeed = 100;
+        this.syncSpeed = 1000;
     }
 
     display(isReference, deltaTime) {

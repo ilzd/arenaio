@@ -65,11 +65,11 @@ io.sockets.on(
             for (let i = 0; i < game.players.length; i++) {
                 if (game.players[i].id == data.id) {
                     game.updatePlayer(game.players[i], data);
-                    data.pos = game.players[i].pos;
+                    game.syncPlayerPosition(game.players[i]);
+                    io.emit('update', data);
                     break;
                 }
             }
-            io.emit('update', data);
         });
 
         socket.on('newaimdir', function (data) {
@@ -132,12 +132,7 @@ function update() {
 function syncPositions() {
     for (let i = 0; i < game.players.length; i++) {
         let player = game.players[i];
-        let expectedPos = player.getNextPosition(player.latency);
-        io.emit('update', {
-            'id': player.id,
-            'pos': player.pos,
-            'posDesync': [expectedPos[0] - player.pos[0], expectedPos[1] - player.pos[1]]
-        });
+        game.syncPlayerPosition(player);
     }
    
 }

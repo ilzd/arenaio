@@ -57,6 +57,15 @@ class ServerGame extends Game {
         this.generateWalls();
     }
 
+    syncPlayerPosition(player){
+        let expectedPos = player.getNextPosition(player.latency);
+        this.io.emit('update', {
+            'id': player.id,
+            'pos': player.pos,
+            'posDesync': [expectedPos[0] - player.pos[0], expectedPos[1] - player.pos[1]]
+        });
+    }
+
     generateWalls() {
         for (let i = 0; i < consts.MAP_HORIZONTAL_SQUARES; i++) {
             this.walls[i] = [];
