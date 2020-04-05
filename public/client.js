@@ -82,7 +82,7 @@ function getBowDescription(bow) {
             result = 'Arco gélico: Suas flechas causam lentidão';
             break;
         case 4:
-            result = 'Arco pequeno: Sua velocidade compensa sua força';
+            result = 'Arco pequeno: Dispara com alta frequência flechas que quicam';
             break;
         case 5:
             result = 'Arco magnético: Suas flechas vão e vem enquanto perfuram paredes e inimigos';

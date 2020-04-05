@@ -172,34 +172,38 @@ class ServerGame extends Game {
     }
 
     update(deltaTime) {
-        super.update(deltaTime);
-        for (let i = 0; i < this.latencyData.length; i++) {
-            let data = this.latencyData[i];
-            if (data.waiting) {
-                data.latency += deltaTime;
-            } else {
-                data.triggerWait -= deltaTime;
-                if (data.triggerWait < 0) {
-                    data.waiting = true;
-                    data.triggerWait = this.pingTestTriggerDelay;
-                    data.socket.emit('pingtest');
+        let updateTimes = Math.round(deltaTime / 0.0005);
+        deltaTime /= updateTimes;
+        for (let i = 0; i < updateTimes; i++) {
+            super.update(deltaTime);
+            for (let i = 0; i < this.latencyData.length; i++) {
+                let data = this.latencyData[i];
+                if (data.waiting) {
+                    data.latency += deltaTime;
+                } else {
+                    data.triggerWait -= deltaTime;
+                    if (data.triggerWait < 0) {
+                        data.waiting = true;
+                        data.triggerWait = this.pingTestTriggerDelay;
+                        data.socket.emit('pingtest');
+                    }
                 }
             }
-        }
-        for (let i = 0; i < this.players.length; i++) {
-            if (this.players[i].attacked) {
-                this.players[i].attacked = false;
-                this.executeBasicAttack(this.players[i]);
+            for (let i = 0; i < this.players.length; i++) {
+                if (this.players[i].attacked) {
+                    this.players[i].attacked = false;
+                    this.executeBasicAttack(this.players[i]);
+                }
             }
+
+            this.checkProjectiles();
+
+            this.sendMessages();
+
+            this.manageStars(deltaTime);
+
+            this.cleanInactiveObjects();
         }
-
-        this.checkProjectiles();
-
-        this.sendMessages();
-
-        this.manageStars(deltaTime);
-
-        this.cleanInactiveObjects();
     }
 
     manageStars() {
@@ -222,8 +226,8 @@ class ServerGame extends Game {
         }
     }
 
-    announce(message){
-        this.io.emit('announcement', {'message': message});
+    announce(message) {
+        this.io.emit('announcement', { 'message': message });
     }
 
     sendMessages() {
@@ -242,21 +246,61 @@ class ServerGame extends Game {
             //checking colision between projectiles and map extremes
             let proj = this.projectiles[i];
             if (proj.active) {
-                //checking colision between players and map extremes
-                if (proj.pos[0] - proj.radius < 0 ||
-                    proj.pos[0] + proj.radius > this.mapWidth ||
-                    proj.pos[1] - proj.radius < 0 ||
-                    proj.pos[1] + proj.radius > this.mapHeight) {
 
-                    if(proj.collidesWithWall) proj.active = false;
-
+                if (proj.pos[0] - proj.radius < 0) {
+                    if (proj.collidesWithWall) {
+                        if (!proj.bounces) {
+                            proj.active = false;
+                        } else {
+                            proj.pos[0] = proj.radius;
+                            proj.bounce(0);
+                            this.io.emit('updateprojectile', { 'id': proj.id, 'pos': proj.pos, 'dir': proj.dir });
+                        }
+                    }
                 }
+
+                if (proj.pos[0] + proj.radius > this.mapWidth) {
+                    if (proj.collidesWithWall) {
+                        if (!proj.bounces) {
+                            proj.active = false;
+                        } else {
+                            proj.pos[0] = this.mapWidth - proj.radius;
+                            proj.bounce(0);
+                            this.io.emit('updateprojectile', { 'id': proj.id, 'pos': proj.pos, 'dir': proj.dir });
+                        }
+                    }
+                }
+
+                if (proj.pos[1] - proj.radius < 0) {
+                    if (proj.collidesWithWall) {
+                        if (!proj.bounces) {
+                            proj.active = false;
+                        } else {
+                            proj.pos[1] = proj.radius;
+                            proj.bounce(1);
+                            this.io.emit('updateprojectile', { 'id': proj.id, 'pos': proj.pos, 'dir': proj.dir });
+                        }
+                    }
+                }
+
+                if (proj.pos[1] + proj.radius > this.mapHeight) {
+                    if (proj.collidesWithWall) {
+                        if (!proj.bounces) {
+                            proj.active = false;
+                        } else {
+                            proj.pos[1] = this.mapHeight - proj.radius;
+                            proj.bounce(1);
+                            this.io.emit('updateprojectile', { 'id': proj.id, 'pos': proj.pos, 'dir': proj.dir });
+                        }
+                    }
+                }
+
 
                 //checking if projectile traveled too far
                 if (proj.traveledDistance > proj.range) {
-                    if(proj.shootsBack){
+                    if (proj.shootsBack) {
                         proj.shootBack();
-                        this.io.emit('updateprojectile', {'id': proj.id, 'pos': proj.pos, 'dir': proj.dir});
+                        this.io.emit('updateprojectile', { 'id': proj.id, 'pos': proj.pos, 'dir': proj.dir });
                     } else {
                         proj.active = false;
                     }
@@ -283,6 +327,13 @@ class ServerGame extends Game {
                             let dist = distVector(proj.pos, plr.pos);
                             if (dist < proj.radius + plr.radius) {
                                 proj.hit(plr);
+                                if (proj.bounces) {
+                                    let colisionDir = subVector(proj.pos, plr.pos);
+                                    colisionDir = normalizeVector(colisionDir);
+                                    proj.dir = [colisionDir[0], colisionDir[1]];
+                                    proj.increaseRangeForBouncing();
+                                    this.io.emit('updateprojectile', { 'id': proj.id, 'pos': proj.pos, 'dir': proj.dir });
+                                }
                             }
                         }
                     }
@@ -299,18 +350,47 @@ class ServerGame extends Game {
                             if (this.walls[j][k]) {
                                 let wallX = j * this.blockSize, wallY = k * this.blockSize;
                                 let cX = proj.pos[0], cY = proj.pos[1];
+                                let colisionSide;
                                 if (cX < wallX) {
                                     cX = wallX;
+                                    colisionSide = 0;
                                 } else if (cX > wallX + this.blockSize) {
                                     cX = wallX + this.blockSize;
+                                    colisionSide = 1;
                                 }
                                 if (cY < wallY) {
                                     cY = wallY;
+                                    colisionSide = 2;
                                 } else if (cY > wallY + this.blockSize) {
                                     cY = wallY + this.blockSize;
+                                    colisionSide = 3;
                                 }
                                 if (distVector(proj.pos, [cX, cY]) < proj.radius) {
-                                    proj.active = false;
+                                    if (!proj.bounces) {
+                                        proj.active = false;
+                                    } else {
+                                        switch (colisionSide) {
+                                            case 0:
+                                                proj.bounce(0);
+                                                proj.pos[0] = cX - proj.radius;
+                                                break;
+                                            case 1:
+                                                proj.pos[0] = cX + proj.radius;
+                                                proj.bounce(0);
+                                                break;
+                                            case 2:
+                                                proj.bounce(1);
+                                                proj.pos[1] = cY - proj.radius;
+                                                break;
+                                            case 3:
+                                                proj.bounce(1);
+                                                proj.pos[1] = cY + proj.radius;
+                                                break;
+                                            default:
+                                                break;
+                                        }
+                                        this.io.emit('updateprojectile', { 'id': proj.id, 'pos': proj.pos, 'dir': proj.dir });
+                                    }
                                 }
                             }
 
@@ -380,7 +460,7 @@ class ServerGame extends Game {
                     'color': [255, 0, 0],
                     'speed': 1500,
                     'range': 600,
-                    'radius': 4,
+                    'radius': 5,
                     'type': 0,
                     'pos': [player.pos[0] + player.aimDir[0] * player.radius, player.pos[1] + player.aimDir[1] * player.radius],
                     'dir': [player.aimDir[0], player.aimDir[1]],
@@ -403,7 +483,7 @@ class ServerGame extends Game {
                         'color': [255, 255, 0],
                         'speed': 750 + Math.random() * 1000,
                         'range': 400,
-                        'radius': 4,
+                        'radius': 5,
                         'type': 0,
                         'pos': [player.pos[0] + player.aimDir[0] * player.radius, player.pos[1] + player.aimDir[1] * player.radius],
                         'dir': [projDir[0], projDir[1]],
@@ -423,7 +503,7 @@ class ServerGame extends Game {
                     'color': [0, 0, 255],
                     'speed': 2600,
                     'range': 900,
-                    'radius': 4,
+                    'radius': 5,
                     'type': 0,
                     'pos': [player.pos[0] + player.aimDir[0] * player.radius, player.pos[1] + player.aimDir[1] * player.radius],
                     'dir': [player.aimDir[0], player.aimDir[1]],
@@ -442,7 +522,7 @@ class ServerGame extends Game {
                     'color': [200, 255, 255],
                     'speed': 1500,
                     'range': 600,
-                    'radius': 4,
+                    'radius': 5,
                     'type': 0,
                     'pos': [player.pos[0] + player.aimDir[0] * player.radius, player.pos[1] + player.aimDir[1] * player.radius],
                     'dir': [player.aimDir[0], player.aimDir[1]],
@@ -460,10 +540,11 @@ class ServerGame extends Game {
                 projData = {
                     'id': this.getNewUniqueId(),
                     'color': [0, 255, 0],
-                    'speed': 2500,
+                    'speed': 2000,
                     'range': 700,
-                    'radius': 4,
+                    'radius': 5,
                     'type': 0,
+                    'bounces': true,
                     'pos': [player.pos[0] + player.aimDir[0] * player.radius, player.pos[1] + player.aimDir[1] * player.radius],
                     'dir': [player.aimDir[0], player.aimDir[1]],
                 }
@@ -481,7 +562,7 @@ class ServerGame extends Game {
                     'color': [255, 0, 255],
                     'speed': 1500,
                     'range': 650,
-                    'radius': 4,
+                    'radius': 5,
                     'type': 0,
                     'collidesWithWall': false,
                     'pierces': true,
@@ -515,12 +596,8 @@ class ServerGame extends Game {
                     switch (player.activesInfo[skill].skill) {
                         case 0:
                             let flashDist = 280;
-                            // if (player.dir[0] != 0 || player.dir[1] != 0) {
-                            //     player.pos = [player.pos[0] + player.dir[0] * flashDist, player.pos[1] + player.dir[1] * flashDist];
-                            // } else {
                             player.pos = [player.pos[0] + player.aimDir[0] * flashDist, player.pos[1] + player.aimDir[1] * flashDist];
                             player.posToValidate = true;
-                            // }
                             this.io.emit('update', { 'id': player.id, 'pos': player.pos, 'posToValidate': player.posToValidate });
                             break;
                         case 1:
@@ -557,7 +634,7 @@ class ServerGame extends Game {
                         case 5:
                             player.imaterial = 1.5;
                             player.wasImaterial = true;
-                            
+
                             this.io.emit('update', { 'id': player.id, 'imaterial': player.imaterial });
                             break;
                         case 6:
@@ -606,12 +683,6 @@ class ServerGame extends Game {
                             player.startAreaHealing(consts.SKILL_HEALAREA_DURATION);
                             break;
                         case 9:
-                            // let finalDir;
-                            // if (player.dir[0] != 0 || player.dir[1] != 0) {
-                            //     finalDir = [player.dir[0], player.dir[1]];
-                            // } else {
-                            //     finalDir = [player.aimDir[0], player.aimDir[1]];
-                            // }
                             player.takeForce(player.aimDir, 3000, 0.17);
                         default:
                             break;
@@ -677,27 +748,27 @@ class ServerGame extends Game {
         data.attackSpeed = attackSpeed;
 
         //if has no slow on recharge passive
-        if(this.hasPassive(0, data.build.passives)){
+        if (this.hasPassive(0, data.build.passives)) {
             data.takesSlowOnRecharge = false;
         }
 
         //if has life regen passive
-        if(this.hasPassive(1, data.build.passives)){
+        if (this.hasPassive(1, data.build.passives)) {
             data.lifeRegen = player.lifeRegen * 2;
         }
 
         //if has mobility passive
-        if(this.hasPassive(2, data.build.passives)){
+        if (this.hasPassive(2, data.build.passives)) {
             data.speed = player.speed * 1.2;
         }
 
         //if has agility passive
-        if(this.hasPassive(3, data.build.passives)){
+        if (this.hasPassive(3, data.build.passives)) {
             data.attackSpeed *= 1.2;
         }
 
         //if has repulsion passive
-        if(this.hasPassive(4, data.build.passives)){
+        if (this.hasPassive(4, data.build.passives)) {
             data.repulses = true;
         }
 
@@ -707,11 +778,11 @@ class ServerGame extends Game {
         return player;
     }
 
-    hasPassive(passive, passives){
+    hasPassive(passive, passives) {
         let result = false;
 
-        for(let i = 0; i < passives.length; i++){
-            if(passives[i] == passive){
+        for (let i = 0; i < passives.length; i++) {
+            if (passives[i] == passive) {
                 result = true;
                 break;
             }
@@ -792,7 +863,7 @@ class ServerPlayer extends Player {
 
         if (this.attackIntent) {
             if (this.attackDelay == 0) {
-                if(this.takesSlowOnRecharge) this.addSlowEffect(0.35, 1 / this.attackSpeed);
+                if (this.takesSlowOnRecharge) this.addSlowEffect(0.35, 1 / this.attackSpeed);
                 this.attackDelay = 1 / this.attackSpeed;
                 this.attacked = true;
                 this.messages.push({
@@ -821,12 +892,12 @@ class ServerPlayer extends Player {
                 this.applyAreaHeal(deltaTime);
             }
 
-            if(this.wasImaterial && this.imaterial == 0){
+            if (this.wasImaterial && this.imaterial == 0) {
                 this.wasImaterial = false;
                 this.game.validatePosition(this);
                 this.messages.push({
                     'type': 'update',
-                    'data': {'id': this.id, 'pos': this.pos}
+                    'data': { 'id': this.id, 'pos': this.pos }
                 });
             }
         } else {
@@ -1044,6 +1115,7 @@ class ServerProjectile extends Projectile {
         this.active = true;
         this.collidesWithWall = true;
         this.pierces = false;
+        this.bounces = false;
         this.playersHit = [];
         this.shootsBack = false;
     }
@@ -1056,13 +1128,13 @@ class ServerProjectile extends Projectile {
             }
             this.playersHit.push(player);
         }
-        if(!this.pierces) this.active = false;
+        if (!this.pierces && !this.bounces) this.active = false;
     }
 
-    hitPlayer(id){
+    hitPlayer(id) {
         let did = false;
-        for(let i = 0; i < this.playersHit.length; i++){
-            if(this.playersHit[i].id == id){
+        for (let i = 0; i < this.playersHit.length; i++) {
+            if (this.playersHit[i].id == id) {
                 did = true;
                 break;
             }
@@ -1082,6 +1154,20 @@ class ServerProjectile extends Projectile {
         this.range = distVector(this.pos, this.owner.pos);
         this.dir = subVector(this.owner.pos, this.pos);
         this.fixDir();
+    }
+
+    bounce(axis) {
+        if (axis == 0) {
+            this.dir[0] *= -1;
+        } else {
+            this.dir[1] *= -1;
+        }
+        this.increaseRangeForBouncing();        
+    }
+
+    increaseRangeForBouncing(){
+        this.playersHit = [];
+        this.traveledDistance = maxValue(0, this.traveledDistance - 250);
     }
 }
 

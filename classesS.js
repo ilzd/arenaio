@@ -223,7 +223,8 @@ class Game {
         while (true) {
             dist += 5;
             for (let ang = 0; ang <= 2 * Math.PI; ang += (2 * Math.PI) / 8) {
-                let newX = player.pos[0] + Math.cos(ang) * dist, newY = player.pos[1] + Math.sin(ang) * dist;
+                let newX = constrainValue(player.pos[0] + Math.cos(ang) * dist, 0, this.mapWidth - 1);
+                let newY = constrainValue(player.pos[1] + Math.sin(ang) * dist, 0, this.mapHeight - 1);
                 tX = Math.trunc(newX / this.blockSize), tY = Math.trunc(newY / this.blockSize);
                 if (!this.walls[tX][tY]) {
                     found = true;
