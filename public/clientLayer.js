@@ -287,7 +287,7 @@ class ClientGame extends Game {
         if (this.keyMonitor.get('w')) newDir[1]--;
         if (this.keyMonitor.get('s')) newDir[1]++;
         if (newDir[0] != this.prevDir[0] || newDir[1] != this.prevDir[1]) {
-
+            this.prevDir = newDir;
             sendMessage('newdir', {
                 'id': clientId,
                 'dir': newDir
@@ -303,15 +303,15 @@ class ClientGame extends Game {
         }
     }
 
-    checkForErasing(deltaTime){
-        if(this.typing && this.keyMonitor.get('Backspace')){
-            this.eraseDelay -= deltaTime;
-            if(this.eraseDelay < 0 && frameCount % 3 == 0)
-            if (this.chatMessage.length > 0) this.chatMessage = this.chatMessage.substring(0, this.chatMessage.length - 1);
-        } else {
-            this.eraseDelay = 0.6;
-        }
-    }
+    // checkForErasing(deltaTime){
+    //     if(this.typing && this.keyMonitor.get('Backspace')){
+    //         this.eraseDelay -= deltaTime;
+    //         if(this.eraseDelay < 0 && frameCount % 3 == 0)
+    //         if (this.chatMessage.length > 0) this.chatMessage = this.chatMessage.substring(0, this.chatMessage.length - 1);
+    //     } else {
+    //         this.eraseDelay = 0.6;
+    //     }
+    // }
 
     checkMousePressed(mouseKey) {
         if (mouseKey == RIGHT) {
@@ -435,8 +435,6 @@ class ClientPlayer extends Player {
         this.prevLife = 0;
         this.animationBase = Math.random() * TWO_PI;
         this.bow;
-        this.posDesync = [0, 0];
-        this.syncSpeed = 1000;
     }
 
     display(isReference, deltaTime) {
@@ -530,26 +528,11 @@ class ClientPlayer extends Player {
 
     update(deltaTime) {
         super.update(deltaTime);
-        this.resolvePosDesync(deltaTime);
         if (this.prevLife < this.life) {
             this.prevLife = this.life;
         } else {
             this.prevLife -= deltaTime * 100;
         }
-    }
-
-    resolvePosDesync(deltaTime){
-        let stepSign = (this.posDesync[0] > 0) ? 1 : -1;
-        let deSyncMag = this.posDesync[0] * stepSign;
-        let moveMag = minValue(deSyncMag, deltaTime * this.syncSpeed);
-        this.posDesync[0] -= moveMag * stepSign;
-        this.pos[0] += moveMag * stepSign;
-
-        stepSign = (this.posDesync[1] > 0) ? 1 : -1;
-        deSyncMag = this.posDesync[1] * stepSign;
-        moveMag = minValue(deSyncMag, deltaTime * this.syncSpeed);
-        this.posDesync[1] -= moveMag * stepSign;
-        this.pos[1] += moveMag * stepSign;
     }
 }
 

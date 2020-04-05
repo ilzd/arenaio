@@ -51,8 +51,6 @@ function setup() {
 
     frameRate(999);
 
-    cursor(CROSS);
-
     noSmooth();
 
     document.onkeydown = function (event) {

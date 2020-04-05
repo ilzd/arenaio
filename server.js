@@ -26,8 +26,8 @@ io.sockets.on(
         socket.on('disconnect', function () {
             console.log("client disconnected: " + socket.id);
 
-            for (let i = 0; i < game.players.length; i++) {
-                if (game.players[i].id == socket.id) {
+            for(let i = 0; i < game.players.length; i++){
+                if(game.players[i].id == socket.id){
                     game.announce(game.players[i].nickname + ' deixou a arena');
                     break;
                 }
@@ -65,11 +65,11 @@ io.sockets.on(
             for (let i = 0; i < game.players.length; i++) {
                 if (game.players[i].id == data.id) {
                     game.updatePlayer(game.players[i], data);
-                    game.syncPlayerPosition(game.players[i]);
-                    io.emit('update', data);
+                    data.pos = game.players[i].pos;
                     break;
                 }
             }
+            io.emit('update', data);
         });
 
         socket.on('newaimdir', function (data) {
@@ -116,7 +116,13 @@ io.sockets.on(
 server.listen(port);
 
 setInterval(update, 1);
-setInterval(syncPositions, 1000 / 4);
+setInterval(updateImportant, 1000 / 4);
+
+// setInterval(test, 2000);
+
+// function test(){
+//     io.emit('chatmessage', {'message': 'LzD: mensagem teste teste teste teste teste teste a teste'});
+// }
 
 var deltaTime = 0; //variation in time since last tick
 var prevDate = Date.now(); //last date saved, used to calculate deltaTime
@@ -129,12 +135,14 @@ function update() {
     //console.log(deltaTime);
 }
 
-function syncPositions() {
+function updateImportant() {
     for (let i = 0; i < game.players.length; i++) {
         let player = game.players[i];
-        game.syncPlayerPosition(player);
+        io.emit('update', {
+            'id': player.id,
+            'pos': player.pos
+        });
     }
-   
 }
 
 function calculateDeltaTime() {
