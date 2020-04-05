@@ -288,12 +288,6 @@ class ClientGame extends Game {
         if (this.keyMonitor.get('s')) newDir[1]++;
         if (newDir[0] != this.prevDir[0] || newDir[1] != this.prevDir[1]) {
 
-            //EXPERIMENTAL
-            this.prevDir = newDir;
-            this.camReference.dir = newDir;
-            this.camReference.fixDir();
-            //EXPERIMENTAL
-
             sendMessage('newdir', {
                 'id': clientId,
                 'dir': newDir
