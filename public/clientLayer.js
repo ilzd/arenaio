@@ -309,15 +309,15 @@ class ClientGame extends Game {
         }
     }
 
-    // checkForErasing(deltaTime){
-    //     if(this.typing && this.keyMonitor.get('Backspace')){
-    //         this.eraseDelay -= deltaTime;
-    //         if(this.eraseDelay < 0 && frameCount % 3 == 0)
-    //         if (this.chatMessage.length > 0) this.chatMessage = this.chatMessage.substring(0, this.chatMessage.length - 1);
-    //     } else {
-    //         this.eraseDelay = 0.6;
-    //     }
-    // }
+    checkForErasing(deltaTime){
+        if(this.typing && this.keyMonitor.get('Backspace')){
+            this.eraseDelay -= deltaTime;
+            if(this.eraseDelay < 0 && frameCount % 3 == 0)
+            if (this.chatMessage.length > 0) this.chatMessage = this.chatMessage.substring(0, this.chatMessage.length - 1);
+        } else {
+            this.eraseDelay = 0.6;
+        }
+    }
 
     checkMousePressed(mouseKey) {
         if (mouseKey == RIGHT) {
