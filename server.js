@@ -118,12 +118,6 @@ server.listen(port);
 setInterval(update, 1);
 setInterval(updateImportant, 1000 / 4);
 
-// setInterval(test, 2000);
-
-// function test(){
-//     io.emit('chatmessage', {'message': 'LzD: mensagem teste teste teste teste teste teste a teste'});
-// }
-
 var deltaTime = 0; //variation in time since last tick
 var prevDate = Date.now(); //last date saved, used to calculate deltaTime
 
