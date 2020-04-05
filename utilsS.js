@@ -24,8 +24,16 @@ function magVector(vet){
     return Math.sqrt(vet[0] * vet[0] + vet[1] * vet[1]);
 }
 
+function magVectorSqr(vet){
+    return vet[0] * vet[0] + vet[1] * vet[1];
+}
+
 function distVector(v1, v2){
     return magVector(subVector(v2, v1));
+}
+
+function distVectorSqr(v1, v2){
+    return magVectorSqr(subVector(v2, v1));
 }
 
 function mapValue(val, min, max, minR, maxR){
@@ -87,5 +95,7 @@ module.exports = {
     maxValue: maxValue,
     minValue: minValue,
     angleFromX: angleFromX,
-    angleBetweenVector: angleBetweenVector
+    angleBetweenVector: angleBetweenVector,
+    magVectorSqr: magVectorSqr,
+    distVectorSqr: distVectorSqr
 }
