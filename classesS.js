@@ -138,7 +138,7 @@ class Game {
         //related to players
         for (let i = 0; i < this.players.length; i++) {
             let plr = this.players[i];
-            if(!plr.active || plr.imaterial > 0) continue;
+            if(!plr.active) continue;
 
             //checking colision between players and map extremes
             if (plr.pos[0] - plr.radius < 0) {
@@ -151,6 +151,8 @@ class Game {
             } else if (plr.pos[1] + plr.radius > this.mapHeight) {
                 plr.pos[1] = this.mapHeight - plr.radius;
             }
+
+            if(plr.imaterial > 0) continue;
 
             //checking colision between players (maybe keep this only in the server)
             for (let j = 0; j < this.players.length; j++) {
@@ -223,8 +225,7 @@ class Game {
         while (true) {
             dist += 5;
             for (let ang = 0; ang <= 2 * Math.PI; ang += (2 * Math.PI) / 8) {
-                let newX = constrainValue(player.pos[0] + Math.cos(ang) * dist, 0, this.mapWidth - 1);
-                let newY = constrainValue(player.pos[1] + Math.sin(ang) * dist, 0, this.mapHeight - 1);
+                let newX = player.pos[0] + Math.cos(ang) * dist, newY = player.pos[1] + Math.sin(ang) * dist;
                 tX = Math.trunc(newX / this.blockSize), tY = Math.trunc(newY / this.blockSize);
                 if (!this.walls[tX][tY]) {
                     found = true;
@@ -385,8 +386,9 @@ class Projectile extends GameObject {
 class Star extends GameObject{
     constructor(){
         super();
-        this.respawn = 0;
         this.maxRespawn = 25;
+        this.respawn = this.maxRespawn;
+        
     }
 
     update(deltaTime){

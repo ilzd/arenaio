@@ -530,7 +530,7 @@ class ServerGame extends Game {
                 proj = this.buildProjectile(player.id, projData);
 
                 proj.effects.push(new ProjDamage(proj, 12));
-                proj.effects.push(new SlowEffect(0.4, 0.5));
+                proj.effects.push(new SlowEffect(0.2, 0.55));
 
                 this.addProjectile(proj);
                 this.io.emit('newprojectile', projData);
@@ -1167,6 +1167,7 @@ class ServerProjectile extends Projectile {
 
     increaseRangeForBouncing(){
         this.playersHit = [];
+        this.range =  maxValue(0, this.range - 25);
         this.traveledDistance = maxValue(0, this.traveledDistance - 250);
     }
 }
