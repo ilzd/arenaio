@@ -56,17 +56,40 @@ class ServerGame extends Game {
     }
 
     generateWalls() {
-        for (let i = 0; i < consts.MAP_HORIZONTAL_SQUARES; i++) {
-            this.walls[i] = [];
-            for (let j = 0; j < consts.MAP_VERTICAL_SQUARES; j++) {
-                let chance = Math.random();
-                if (chance < 0.15) {
-                    this.walls[i].push(true);
-                } else {
-                    this.walls[i].push(false);
-                }
-            }
-        }
+        // for (let i = 0; i < consts.MAP_HORIZONTAL_SQUARES; i++) {
+        //     this.walls[i] = [];
+        //     for (let j = 0; j < consts.MAP_VERTICAL_SQUARES; j++) {
+        //         let chance = Math.random();
+        //         if (chance < 0.15) {
+        //             this.walls[i].push(true);
+        //         } else {
+        //             this.walls[i].push(false);
+        //         }
+        //     }
+        // }
+
+        this.walls = [
+            [false,false,false,false,true,false,false,false,false,false,false,false,false,false,true,false,false,false,false],
+            [false,true,true,false,false,false,true,true,false,true,false,true,true,false,false,false,true,true,false],
+            [false,true,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,true,false],
+            [false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false],
+            [false,false,false,false,true,true,false,false,false,false,false,false,false,true,true,false,false,false,false],
+            [false,false,false,false,true,false,false,false,false,false,false,false,false,false,true,false,false,false,false],
+            [false,true,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,true,false],
+            [false,true,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,true,false],
+            [false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false],
+            [true,true,true,false,false,false,true,true,false,false,false,true,true,false,false,false,true,true,true],
+            [false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false],
+            [false,true,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,true,false],
+            [false,true,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,true,false],
+            [false,false,false,false,true,false,false,false,false,false,false,false,false,false,true,false,false,false,false],
+            [false,false,false,false,true,true,false,false,false,false,false,false,false,true,true,false,false,false,false],
+            [false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false],
+            [false,true,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,true,false],
+            [false,true,true,false,false,false,true,true,false,true,false,true,true,false,false,false,true,true,false],
+            [false,false,false,false,true,false,false,false,false,false,false,false,false,false,true,false,false,false,false]
+        ];            
+            
     }
 
     getNewUniqueId() {
@@ -109,7 +132,8 @@ class ServerGame extends Game {
                     'imaterial': plr.imaterial,
                     'areaHealing': plr.areaHealing,
                     'lifeRegen': plr.lifeRegen,
-                    'repulses': plr.repulses
+                    'repulses': plr.repulses,
+                    'areaDamage': plr.areaDamage
                 }
             }
         }
@@ -129,6 +153,7 @@ class ServerGame extends Game {
                     'slow': proj.slow,
                     'fast': proj.fast,
                     'color': proj.color,
+                    'maxRange': proj.maxRange,
                     'range': proj.range,
                     'traveledDistance': proj.traveledDistance,
                     'type': proj.type
@@ -220,7 +245,7 @@ class ServerGame extends Game {
                     str.respawn = str.maxRespawn;
                     this.io.emit('update', { 'id': plr.id, 'points': plr.points });
                     this.io.emit('updatestar', { 'id': str.id, 'respawn': str.respawn });
-                    this.announce(plr.nickname + ' coletou uma estrela');
+                    this.announce(plr.nickname + ' coletou uma estrela e marcou 3 pontos');
                 }
             }
         }
@@ -459,7 +484,7 @@ class ServerGame extends Game {
                     'id': this.getNewUniqueId(),
                     'color': [255, 0, 0],
                     'speed': 1500,
-                    'range': 600,
+                    'maxRange': 600,
                     'radius': 5,
                     'type': 0,
                     'pos': [player.pos[0] + player.aimDir[0] * player.radius, player.pos[1] + player.aimDir[1] * player.radius],
@@ -482,7 +507,7 @@ class ServerGame extends Game {
                         'id': this.getNewUniqueId(),
                         'color': [255, 255, 0],
                         'speed': 750 + Math.random() * 1000,
-                        'range': 400,
+                        'maxRange': 400,
                         'radius': 5,
                         'type': 0,
                         'pos': [player.pos[0] + player.aimDir[0] * player.radius, player.pos[1] + player.aimDir[1] * player.radius],
@@ -502,7 +527,7 @@ class ServerGame extends Game {
                     'id': this.getNewUniqueId(),
                     'color': [0, 0, 255],
                     'speed': 2600,
-                    'range': 900,
+                    'maxRange': 900,
                     'radius': 5,
                     'type': 0,
                     'pos': [player.pos[0] + player.aimDir[0] * player.radius, player.pos[1] + player.aimDir[1] * player.radius],
@@ -521,7 +546,7 @@ class ServerGame extends Game {
                     'id': this.getNewUniqueId(),
                     'color': [200, 255, 255],
                     'speed': 1500,
-                    'range': 600,
+                    'maxRange': 600,
                     'radius': 5,
                     'type': 0,
                     'pos': [player.pos[0] + player.aimDir[0] * player.radius, player.pos[1] + player.aimDir[1] * player.radius],
@@ -541,7 +566,7 @@ class ServerGame extends Game {
                     'id': this.getNewUniqueId(),
                     'color': [0, 255, 0],
                     'speed': 2000,
-                    'range': 700,
+                    'maxRange': 700,
                     'radius': 5,
                     'type': 0,
                     'bounces': true,
@@ -561,7 +586,7 @@ class ServerGame extends Game {
                     'id': this.getNewUniqueId(),
                     'color': [255, 0, 255],
                     'speed': 1500,
-                    'range': 650,
+                    'maxRange': 650,
                     'radius': 5,
                     'type': 0,
                     'collidesWithWall': false,
@@ -610,7 +635,7 @@ class ServerGame extends Game {
                                 'id': this.getNewUniqueId(),
                                 'color': [0, 0, 0],
                                 'speed': 500,
-                                'range': 750,
+                                'maxRange': 750,
                                 'radius': 70,
                                 'type': 1,
                                 'collidesWithWall': false,
@@ -647,7 +672,7 @@ class ServerGame extends Game {
                                     'id': this.getNewUniqueId(),
                                     'color': [127, 255, 127],
                                     'speed': 800,
-                                    'range': 450,
+                                    'maxRange': 450,
                                     'radius': 8,
                                     'type': 1,
                                     'pos': [player.pos[0] + player.aimDir[0] * player.radius, player.pos[1] + player.aimDir[1] * player.radius],
@@ -666,7 +691,7 @@ class ServerGame extends Game {
                                 'id': this.getNewUniqueId(),
                                 'color': [0, 127, 127],
                                 'speed': 1400,
-                                'range': 600,
+                                'maxRange': 600,
                                 'radius': 20,
                                 'type': 1,
                                 'pos': [player.pos[0] + player.aimDir[0] * player.radius, player.pos[1] + player.aimDir[1] * player.radius],
@@ -772,6 +797,11 @@ class ServerGame extends Game {
             data.repulses = true;
         }
 
+        //if has area damage
+        if (this.hasPassive(5, data.build.passives)) {
+            data.areaDamage = true;
+        }
+
         data.pos = [Math.random() * this.mapWidth, Math.random() * this.mapHeight];
 
         this.updatePlayer(player, data);
@@ -813,6 +843,7 @@ class ServerGame extends Game {
 
         let proj = new ServerProjectile(owner);
         this.updateProjectile(proj, data);
+        proj.range = proj.maxRange;
         return proj;
     }
 
@@ -892,6 +923,10 @@ class ServerPlayer extends Player {
                 this.applyAreaHeal(deltaTime);
             }
 
+            if (this.areaDamage) {
+                this.applyAreaDamage(deltaTime);
+            }
+
             if (this.wasImaterial && this.imaterial == 0) {
                 this.wasImaterial = false;
                 this.game.validatePosition(this);
@@ -908,10 +943,21 @@ class ServerPlayer extends Player {
     applyAreaHeal(deltaTime) {
         for (let i = 0; i < this.game.players.length; i++) {
             let player = this.game.players[i];
-            if (!player.active) return;
+            if (!player.active) continue;
 
             if (distVector(this.pos, player.pos) < consts.SKILL_HEALAREA_RADIUS + player.radius) {
                 player.heal(consts.SKILL_HEALAREA_HEALPERSECOND * deltaTime);
+            }
+        }
+    }
+
+    applyAreaDamage(deltaTime){
+        for (let i = 0; i < this.game.players.length; i++) {
+            let player = this.game.players[i];
+            if (!player.active || player.id == this.id) continue;
+
+            if (distVector(this.pos, player.pos) < consts.SKILL_AREADAMAGE_RADIUS + player.radius) {
+                player.takeDamage(this, consts.SKILL_AREADAMAGE_DAMAGEPERSECOND * deltaTime);
             }
         }
     }
@@ -1030,7 +1076,7 @@ class ServerPlayer extends Player {
         if (this.life == 0) {
             source.points++;
             this.active = false;
-            this.points = 0;//maxValue(0, this.points - 1);
+            this.points = maxValue(0, this.points - 1);
             this.messages.push({
                 'type': 'update',
                 'data': { 'id': this.id, 'points': this.points, 'active': this.active }
@@ -1040,7 +1086,7 @@ class ServerPlayer extends Player {
                 'data': { 'id': source.id, 'points': source.points }
             });
             this.respawn = 3;
-            this.game.announce(source.nickname + ' eliminou ' + this.nickname);
+            this.game.announce(source.nickname + ' eliminou ' + this.nickname + ' e roubou 1 ponto');
         }
     }
 
@@ -1167,8 +1213,8 @@ class ServerProjectile extends Projectile {
 
     increaseRangeForBouncing(){
         this.playersHit = [];
-        this.range =  maxValue(0, this.range - 25);
-        this.traveledDistance = maxValue(0, this.traveledDistance - 250);
+        this.range =  maxValue(0, this.range - this.maxRange * 0.03);
+        this.traveledDistance = maxValue(0, this.traveledDistance - this.maxRange * 0.3);
     }
 }
 

@@ -28,7 +28,7 @@ function preload() {
             'description': getSkillDescription(i)
         };
     }
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 6; i++) {
         passivesInfo[i] = {
             'image': loadImage('./images/passive' + i + '.png'),
             'description': getPassiveDescription(i)
@@ -86,9 +86,6 @@ function getBowDescription(bow) {
             break;
         case 5:
             result = 'Arco magnético: Suas flechas vão e vem enquanto perfuram paredes e inimigos';
-            break;
-        case 5:
-            result = 'Você empurra para longe os inimigos que estão próximos a você';
             break;
         default:
             break;
@@ -154,6 +151,9 @@ function getPassiveDescription(passive) {
             break;
         case 4:
             result = 'Você empurra para longe os inimigos que estão próximos a você';
+            break;
+        case 5:
+            result = 'Você causa dano aos inimigos que estão muito próximos a você';
             break;
         default:
             break;
@@ -226,7 +226,7 @@ function buildForm() {
     for (let i = 0; i < 2; i++) {
         let passiveDiv = document.getElementById('passiveImages' + i);
         let passiveInfo = document.getElementById('passiveInfo' + i);
-        for (let j = 0; j < 5; j++) {
+        for (let j = 0; j < 6; j++) {
             let passive = new Image();
             passive.src = './images/passive' + j + '.png';
             passive.style.margin = 4;

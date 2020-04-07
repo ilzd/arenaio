@@ -41,6 +41,7 @@ class Player extends GameObject {
         this.areaHealing = 0;
         this.lifeRegen = 3;
         this.repulses = false;
+        this.areaDamage = false;
     }
 
     fixAimDir() {
@@ -354,6 +355,7 @@ class Projectile extends GameObject {
         this.fast = 1;
         this.color = [0, 0, 0];
         this.speed = 1200;
+        this.maxRange = 1000;
         this.range = 1000;
         this.traveledDistance = 0;
         this.type = 0;

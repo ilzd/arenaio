@@ -456,6 +456,13 @@ class ClientPlayer extends Player {
             ellipse(this.pos[0], this.pos[1], SKILL_HEALAREA_DIAMETER, SKILL_HEALAREA_DIAMETER);
         }
 
+        if (this.areaDamage) {
+            stroke(255, 0, 0);
+            strokeWeight(3);
+            noFill();
+            ellipse(this.pos[0], this.pos[1], SKILL_AREADAMAGE_DIAMETER, SKILL_AREADAMAGE_DIAMETER);
+        }
+
 
         if (this.imaterial == 0) {
             fill(this.color);
