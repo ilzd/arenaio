@@ -123,6 +123,7 @@ class Game {
         this.projectiles = [];
         this.stars = [];
         this.relics = [];
+        this.lavaPools = [];
         this.walls = [];
         this.matchDuration = 240;
         this.inMatch = true;
@@ -250,6 +251,9 @@ class Game {
         for (let i = 0; i < this.relics.length; i++) {
             this.relics[i].update(deltaTime);
         }
+        for (let i = 0; i < this.lavaPools.length; i++) {
+            this.lavaPools[i].update(deltaTime);
+        }
         this.checkColisions(deltaTime);
     }
 
@@ -306,6 +310,9 @@ class Game {
                             case 10: //explode proj
                                 coldown = 4;
                                 break;
+                            case 11: //lava pool
+                                coldown = 11;
+                                break;
                             default:
                                 break;
                         }
@@ -353,6 +360,14 @@ class Game {
         }
     }
 
+    updateLavaPool(lavaPool, data) {
+        for (let prop in lavaPool) {
+            if ("undefined" != typeof (data[prop])) {
+                lavaPool[prop] = data[prop];
+            }
+        }
+    }
+
     removeProjectile(id) {
         for (let i = 0; i < this.projectiles.length; i++) {
             if (this.projectiles[i].id == id) {
@@ -375,6 +390,15 @@ class Game {
         for (let i = 0; i < this.relics.length; i++) {
             if (this.relics[i].id == id) {
                 this.relics.splice(i, 1);
+                break;
+            }
+        }
+    }
+
+    removeLavaPool(id) {
+        for (let i = 0; i < this.lavaPools.length; i++) {
+            if (this.lavaPools[i].id == id) {
+                this.lavaPools.splice(i, 1);
                 break;
             }
         }
@@ -432,5 +456,21 @@ class Relic extends GameObject {
 
     update(deltaTime) {
         this.respawn = maxValue(0, this.respawn - deltaTime);
+    }
+}
+
+class LavaPool extends GameObject {
+    constructor(owner) {
+        super();
+        this.duration = 0;
+        this.damage = 0;
+        this.owner = owner;
+        this.activated = false;
+    }
+
+    update(deltaTime) {
+        if(!this.activated) return;
+        this.duration = maxValue(0, this.respawn - deltaTime);
+        if(this.duration == 0) this.active = false;
     }
 }

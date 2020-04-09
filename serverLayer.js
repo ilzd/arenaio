@@ -22,6 +22,7 @@ const Player = classes.Player;
 const Projectile = classes.Projectile;
 const Star = classes.Star;
 const Relic = classes.Relic;
+const LavaPool = classes.LavaPool;
 
 const DamageEffect = effects.DamageEffect;
 const ProjDamage = effects.ProjDamage;
@@ -237,6 +238,22 @@ class ServerGame extends Game {
         }
     }
 
+    getLavaPoolData(id) {
+        for (let i = 0; i < this.lavaPools.length; i++) {
+            if (this.lavaPools[i].id == id) {
+                let lavaPool = this.lavaPools[i];
+                return {
+                    'id': lavaPool.id,
+                    'pos': lavaPool.pos,
+                    'radius': lavaPool.radius,
+                    'active': lavaPool.active,
+                    'duration': lavaPool.respawn,
+                    'activated': lavaPool.activated
+                }
+            }
+        }
+    }
+
     addLatencyData(socket) {
         this.latencyData.push({
             'socket': socket,
@@ -290,6 +307,8 @@ class ServerGame extends Game {
             this.manageStars();
 
             this.manageRelics();
+
+            this.manageLavaPools(deltaTime);
 
             this.cleanInactiveObjects();
 
@@ -433,8 +452,34 @@ class ServerGame extends Game {
         }
     }
 
+    manageLavaPools(deltaTime) {
+        for (let j = 0; j < this.lavaPools.length; j++) {
+            let lavaPool = this.lavaPools[j];
+
+            if (!lavaPool.activated) {
+                lavaPool.activationTime -= deltaTime;
+                if (lavaPool.activationTime < 0) {
+                    lavaPool.activated = true;
+                    this.io.emit('updatelavapool', {'id': lavaPool.id, 'activated': lavaPool.activated});
+                } else {
+                    continue;
+                }
+            } 
+
+            for (let i = 0; i < this.players.length; i++) {
+                let plr = this.players[i];
+                if (!plr.active) continue;
+
+                let minDist = plr.radius + lavaPool.radius;
+                if (distVectorSqr(plr.pos, lavaPool.pos) < minDist * minDist) {
+                    plr.takeDamage(lavaPool.owner, lavaPool.damage * deltaTime);
+                }
+            }
+        }
+    }
+
     respawnRelic(relic) {
-        if(this.relics.length > this.players.length){
+        if (this.relics.length > this.players.length) {
             this.removeRelic(relic.id);
             return;
         }
@@ -649,6 +694,10 @@ class ServerGame extends Game {
 
         for (let i = this.relics.length - 1; i >= 0; i--) {
             if (!this.relics[i].active) this.removeRelic(this.relics[i].id);
+        }
+
+        for (let i = this.lavaPools.length - 1; i >= 0; i--) {
+            if (!this.lavaPools[i].active) this.removeLavaPool(this.lavaPools[i].id);
         }
 
         for (let i = this.players.length - 1; i >= 0; i--) {
@@ -925,6 +974,18 @@ class ServerGame extends Game {
                                 }
                             }
                             break;
+                        case 11:
+                            let lavaDist = minValue(600, player.mouseDist);
+                            let lavaData = {
+                                'id': this.getNewUniqueId(),
+                                'duration': 3,
+                                'damage': 50,
+                                'radius': 100,
+                                'pos': [player.pos[0] + player.aimDir[0] * lavaDist, player.pos[1] + player.aimDir[1] * lavaDist]
+                            }
+                            let lavaPool = this.buildLavaPool(player, lavaData);
+                            this.addLavaPool(lavaPool);
+                            break;
                         default:
                             break;
                     }
@@ -1060,7 +1121,7 @@ class ServerGame extends Game {
     addPlayer(socket, player) {
         this.players.push(player);
         this.addLatencyData(socket);
-        if(this.players.length > this.relics.length) this.addRelic();
+        if (this.players.length > this.relics.length) this.addRelic();
     }
 
     removePlayer(id) {
@@ -1104,6 +1165,12 @@ class ServerGame extends Game {
         return relic;
     }
 
+    buildLavaPool(owner, data) {
+        let lavaPool = new ServerLavaPool(owner);
+        this.updateLavaPool(lavaPool, data);
+        return lavaPool;
+    }
+
     addStar(star) {
         this.stars.push(star);
         this.io.emit('newstar', this.getStarData(star.id));
@@ -1120,6 +1187,11 @@ class ServerGame extends Game {
         this.io.emit('newrelic', this.getRelicData(relic.id));
     }
 
+    addLavaPool(lavaPool) {
+        this.lavaPools.push(lavaPool);
+        this.io.emit('newlavapool', this.getLavaPoolData(lavaPool.id));
+    }
+
     removeStar(id) {
         super.removeStar(id);
         this.io.emit('removestar', { 'id': id });
@@ -1128,6 +1200,11 @@ class ServerGame extends Game {
     removeRelic(id) {
         super.removeRelic(id);
         this.io.emit('removerelic', { 'id': id });
+    }
+
+    removeLavaPool(id) {
+        super.removeLavaPool(id);
+        this.io.emit('removelavapool', { 'id': id });
     }
 }
 
@@ -1337,19 +1414,25 @@ class ServerPlayer extends Player {
             'data': { 'id': this.id, 'life': this.life }
         });
         if (this.life == 0) {
-            source.points += 2;
-            this.active = false;
             this.points = maxValue(0, this.points - 1);
+            this.active = false;
+            this.respawn = 3;
+
             this.messages.push({
                 'type': 'update',
                 'data': { 'id': this.id, 'points': this.points, 'active': this.active }
             });
-            this.messages.push({
-                'type': 'update',
-                'data': { 'id': source.id, 'points': source.points }
-            });
-            this.respawn = 3;
-            this.game.announce(source.nickname + ' eliminou ' + this.nickname);
+
+            if (this.id == source.id) {
+                this.game.announce(this.nickname + ' se suicidou');
+            } else {
+                source.points += 2;
+                this.messages.push({
+                    'type': 'update',
+                    'data': { 'id': source.id, 'points': source.points }
+                });
+                this.game.announce(source.nickname + ' eliminou ' + this.nickname);
+            }
         }
     }
 
@@ -1478,6 +1561,13 @@ class ServerProjectile extends Projectile {
         this.playersHit = [];
         this.range = maxValue(0, this.range - this.maxRange * 0.03);
         this.traveledDistance = maxValue(0, this.traveledDistance - this.maxRange * 0.3);
+    }
+}
+
+class ServerLavaPool extends LavaPool {
+    constructor(owner) {
+        super(owner);
+        this.activationTime = 0.75;
     }
 }
 

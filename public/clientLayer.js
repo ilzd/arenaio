@@ -38,6 +38,7 @@ class ClientGame extends Game {
         super.update(deltaTime);
         this.positionCamera();
         this.drawMap();
+        this.drawLavaPools();
         this.updateAnimations(deltaTime);
         this.drawStars(deltaTime);
         this.drawRelics(deltaTime);
@@ -47,16 +48,16 @@ class ClientGame extends Game {
         // this.checkForErasing(deltaTime);
     }
 
-    updateAnimations(deltaTime){
-        for(let i  = this.animations.length - 1; i >= 0 ; i--){
+    updateAnimations(deltaTime) {
+        for (let i = this.animations.length - 1; i >= 0; i--) {
             this.animations[i].update(deltaTime);
             this.animations[i].display();
-            if(!this.animations[i].active) this.animations.splice(i, 1);
+            if (!this.animations[i].active) this.animations.splice(i, 1);
         }
     }
 
-    addAnnouncement(message){
-        this.announcements.push({'message': message, 'duration': 3});
+    addAnnouncement(message) {
+        this.announcements.push({ 'message': message, 'duration': 3 });
         if (this.announcements.length > 3) this.announcements.splice(0, 1);
     }
 
@@ -95,7 +96,7 @@ class ClientGame extends Game {
         }
     }
 
-    displayAnnouncements(deltaTime){
+    displayAnnouncements(deltaTime) {
         push();
         textAlign(CENTER, CENTER);
         let vOffset = 0;
@@ -104,14 +105,14 @@ class ClientGame extends Game {
         strokeWeight(1);
         fill(255);
 
-        for(let i = this.announcements.length - 1; i >= 0; i--){
+        for (let i = this.announcements.length - 1; i >= 0; i--) {
             let ann = this.announcements[i];
             textSize(tSize);
 
             text(ann.message, ANNOUNCEMENT_POS_X, ANNOUNCEMENT_POS_Y + vOffset);
 
             ann.duration = maxValue(0, ann.duration - deltaTime);
-            if(ann.duration == 0){
+            if (ann.duration == 0) {
                 this.announcements.splice(i, 1);
             }
 
@@ -131,6 +132,12 @@ class ClientGame extends Game {
     drawRelics(deltaTime) {
         for (let i = 0; i < this.relics.length; i++) {
             this.relics[i].display(deltaTime);
+        }
+    }
+
+    drawLavaPools() {
+        for (let i = 0; i < this.lavaPools.length; i++) {
+            this.lavaPools[i].display();
         }
     }
 
@@ -346,7 +353,7 @@ class ClientGame extends Game {
 
     checkMousePressed(mouseKey) {
         if (mouseKey == RIGHT) {
-            sendMessage('mousedist', {'id': this.camReference.id, 'dist': distVector(addVector(mousePos, this.cameraOffset), [VIRTUAL_MIDDLE_X, VIRTUAL_MIDDLE_Y])});
+            sendMessage('mousedist', { 'id': this.camReference.id, 'dist': distVector(addVector(mousePos, this.cameraOffset), [VIRTUAL_MIDDLE_X, VIRTUAL_MIDDLE_Y]) });
             sendMessage('skillused', { 'id': clientId, 'skill': 0 });
         }
     }
@@ -367,11 +374,11 @@ class ClientGame extends Game {
 
                 switch (key) {
                     case 'e':
-                        sendMessage('mousedist', {'id': this.camReference.id, 'dist': distVector(addVector(mousePos, this.cameraOffset), [VIRTUAL_MIDDLE_X, VIRTUAL_MIDDLE_Y])});
+                        sendMessage('mousedist', { 'id': this.camReference.id, 'dist': distVector(addVector(mousePos, this.cameraOffset), [VIRTUAL_MIDDLE_X, VIRTUAL_MIDDLE_Y]) });
                         sendMessage('skillused', { 'id': clientId, 'skill': 1 });
                         break;
                     case ' ':
-                        sendMessage('mousedist', {'id': this.camReference.id, 'dist': distVector(addVector(mousePos, this.cameraOffset), [VIRTUAL_MIDDLE_X, VIRTUAL_MIDDLE_Y])});
+                        sendMessage('mousedist', { 'id': this.camReference.id, 'dist': distVector(addVector(mousePos, this.cameraOffset), [VIRTUAL_MIDDLE_X, VIRTUAL_MIDDLE_Y]) });
                         sendMessage('skillused', { 'id': clientId, 'skill': 2 });
                         break;
                     default:
@@ -408,7 +415,7 @@ class ClientGame extends Game {
         let player = new ClientPlayer();
         this.updatePlayer(player, data);
 
-        switch(player.build.basicAttack){
+        switch (player.build.basicAttack) {
             case 0:
                 player.bow = { 'color': [200, 0, 0], 'width': 1.2, 'height': 3 }
                 break;
@@ -464,12 +471,22 @@ class ClientGame extends Game {
         return relic;
     }
 
+    buildLavaPool(data) {
+        let lavaPool = new ClientLavaPool();
+        this.updateLavaPool(lavaPool, data);
+        return lavaPool;
+    }
+
     addStar(data) {
         this.stars.push(this.buildStar(data));
     }
 
     addRelic(data) {
         this.relics.push(this.buildRelic(data));
+    }
+
+    addLavaPool(data) {
+        this.lavaPools.push(this.buildLavaPool(data));
     }
 }
 
@@ -673,7 +690,7 @@ class ClientRelic extends Relic {
         translate(this.pos[0], this.pos[1]);
 
         let relicColor = [0, 0, 0];
-        switch(this.type){
+        switch (this.type) {
             case 0:
                 relicColor = [255, 0, 0];
                 break;
@@ -706,7 +723,7 @@ class ClientRelic extends Relic {
             stroke(0);
             strokeWeight(1);
         }
-        
+
         let p = -0.707 * this.radius;
         let size = 0.707 * this.radius - p;
         rotate(this.animationBase);
@@ -726,26 +743,44 @@ class ClientRelic extends Relic {
     }
 }
 
+class ClientLavaPool extends LavaPool {
+    constructor(owner) {
+        super(owner);
+        this.animationBase = Math.random() * TWO_PI;
+    }
+
+    display() {
+        stroke(255, 0, 0);
+        strokeWeight(4);
+        if (this.activated) {
+            fill(200, 0, 0);
+        } else {
+            noFill();
+        }
+        ellipse(this.pos[0], this.pos[1], this.radius * 2, this.radius * 2);
+    }
+}
+
 class Animation {
-    constructor(){
+    constructor() {
         this.active = true;
         this.maxDuration = 0;
         this.duration = 0;
         this.pos = [0, 0];
     }
 
-    update(deltaTime){
+    update(deltaTime) {
         this.duration -= deltaTime;
-        if(this.duration < 0) this.active = false;
+        if (this.duration < 0) this.active = false;
     }
 
-    display(){
+    display() {
 
     }
 }
 
 class ExplosionAnimation extends Animation {
-    constructor(data){
+    constructor(data) {
         super();
         this.maxDuration = 0.3;
         this.duration = this.maxDuration;
@@ -754,7 +789,7 @@ class ExplosionAnimation extends Animation {
         this.color = data.color;
     }
 
-    display(){
+    display() {
         noFill();
         stroke(this.color);
         strokeWeight(2);

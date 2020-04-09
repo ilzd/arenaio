@@ -23,7 +23,7 @@ var weapon = 0;
 var displayedFps = 0;
 
 function preload() {
-    for (let i = 0; i < 11; i++) {
+    for (let i = 0; i < 12; i++) {
         skillsInfo[i] = {
             'image': loadImage('./images/skill' + i + '.png'),
             'description': getSkillDescription(i)
@@ -132,6 +132,9 @@ function getSkillDescription(skill) {
         case 10:
             result = 'Explode seus projéteis aplicando seus efeitos em uma curta área no local da explosão';
             break;
+        case 11:
+            result = 'Cria uma poça de lava na posição do cursor que causa dano em quem está nela';
+            break;
         default:
             break;
     }
@@ -204,7 +207,7 @@ function buildForm() {
     for (let i = 0; i < 3; i++) {
         let skillsDiv = document.getElementById('skillImages' + i);
         let skillInfo = document.getElementById('skillInfo' + i);
-        for (let j = 0; j < 11; j++) {
+        for (let j = 0; j < 12; j++) {
             let skill = new Image();
             skill.src = './images/skill' + j + '.png';
             skill.style.margin = 4;
@@ -367,6 +370,10 @@ function registerEvents() {
         if (inGame) game.addRelic(data);
     });
 
+    socket.on('newlavapool', function (data) {
+        if (inGame) game.addLavaPool(data);
+    });
+
     socket.on('walls', function (data) {
         if (inGame) {
             game.walls = data;
@@ -404,6 +411,17 @@ function registerEvents() {
         }
     });
 
+    socket.on('updatelavapool', function (data) {
+        if (inGame) {
+            for (let i = 0; i < game.lavaPools.length; i++) {
+                if (game.lavaPools[i].id == data.id) {
+                    game.updateLavaPool(game.lavaPools[i], data);
+                    break;
+                }
+            }
+        }
+    });
+
     socket.on('removeprojectile', function (data) {
         if (inGame) game.removeProjectile(data.id);
     });
@@ -414,6 +432,10 @@ function registerEvents() {
 
     socket.on('removerelic', function (data) {
         if (inGame) game.removeRelic(data.id);
+    });
+
+    socket.on('removelavapool', function (data) {
+        if (inGame) game.removeLavaPool(data.id);
     });
 
     socket.on('chatmessage', function (data) {
