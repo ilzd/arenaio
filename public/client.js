@@ -41,6 +41,7 @@ function preload() {
             'description': getBowDescription(i)
         };
     }
+
 }
 
 function setup() {
@@ -426,6 +427,7 @@ function registerEvents() {
     socket.on('matchduration', function (data) {
         if (inGame) game.matchDuration = data;
     });
+
 }
 
 function sendMessage(type, data) {

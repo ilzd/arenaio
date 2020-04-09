@@ -336,6 +336,11 @@ class ServerGame extends Game {
             this.io.emit('updatestar', this.getStarData(this.stars[i].id));
         }
 
+        for (let i = 0; i < this.relics.length; i++) {
+            this.respawnRelic(this.relics[i]);
+            this.io.emit('updaterelic', this.getRelicData(this.relics[i].id));
+        }
+
         for (let i = 0; i < this.players.length; i++) {
             this.players[i] = this.buildPlayer(this.players[i].data);
             this.io.emit('update', this.getPlayerData(this.players[i].id));
@@ -803,7 +808,7 @@ class ServerGame extends Game {
                     this.io.emit('update', { 'id': player.id, 'activesInfo': player.activesInfo });
                     switch (player.activesInfo[skill].skill) {
                         case 0:
-                            let flashDist = 280;
+                            let flashDist = minValue(280, player.mouseDist);
                             player.pos = [player.pos[0] + player.aimDir[0] * flashDist, player.pos[1] + player.aimDir[1] * flashDist];
                             player.posToValidate = true;
                             this.io.emit('update', { 'id': player.id, 'pos': player.pos, 'posToValidate': player.posToValidate });
@@ -891,7 +896,9 @@ class ServerGame extends Game {
                             player.startAreaHealing(consts.SKILL_HEALAREA_DURATION);
                             break;
                         case 9:
-                            player.takeForce(player.aimDir, 3000, 0.17);
+                            let dashDistance = minValue(500, player.mouseDist);
+                            let dashSpeed = 3000;
+                            player.takeForce(player.aimDir, dashSpeed, dashDistance / dashSpeed);
                             break;
                         case 10:
                             for (let i = 0; i < this.projectiles.length; i++) {
@@ -1051,10 +1058,9 @@ class ServerGame extends Game {
     }
 
     addPlayer(socket, player) {
-        //player.socket = socket;
         this.players.push(player);
         this.addLatencyData(socket);
-        this.addRelic();
+        if(this.players.length > this.relics.length) this.addRelic();
     }
 
     removePlayer(id) {
@@ -1106,7 +1112,7 @@ class ServerGame extends Game {
     addRelic() {
         let relicData = {
             'id': this.getNewUniqueId(),
-            'radius': 20,
+            'radius': 30,
         };
         let relic = this.buildRelic(relicData);
         this.respawnRelic(relic);
@@ -1142,6 +1148,7 @@ class ServerPlayer extends Player {
         this.takesSlowOnRecharge = true;
         this.damageMultiplier = 1;
         this.data;
+        this.mouseDist = 0;
     }
 
     attack(deltaTime) {

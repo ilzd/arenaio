@@ -38,12 +38,12 @@ class ClientGame extends Game {
         super.update(deltaTime);
         this.positionCamera();
         this.drawMap();
+        this.updateAnimations(deltaTime);
         this.drawStars(deltaTime);
         this.drawRelics(deltaTime);
         this.drawPlayers(deltaTime);
         this.drawProjectiles();
         this.checkPlayerAim();
-        this.updateAnimations(deltaTime);
         // this.checkForErasing(deltaTime);
     }
 
@@ -346,6 +346,7 @@ class ClientGame extends Game {
 
     checkMousePressed(mouseKey) {
         if (mouseKey == RIGHT) {
+            sendMessage('mousedist', {'id': this.camReference.id, 'dist': distVector(addVector(mousePos, this.cameraOffset), [VIRTUAL_MIDDLE_X, VIRTUAL_MIDDLE_Y])});
             sendMessage('skillused', { 'id': clientId, 'skill': 0 });
         }
     }
@@ -366,9 +367,11 @@ class ClientGame extends Game {
 
                 switch (key) {
                     case 'e':
+                        sendMessage('mousedist', {'id': this.camReference.id, 'dist': distVector(addVector(mousePos, this.cameraOffset), [VIRTUAL_MIDDLE_X, VIRTUAL_MIDDLE_Y])});
                         sendMessage('skillused', { 'id': clientId, 'skill': 1 });
                         break;
                     case ' ':
+                        sendMessage('mousedist', {'id': this.camReference.id, 'dist': distVector(addVector(mousePos, this.cameraOffset), [VIRTUAL_MIDDLE_X, VIRTUAL_MIDDLE_Y])});
                         sendMessage('skillused', { 'id': clientId, 'skill': 2 });
                         break;
                     default:
@@ -703,18 +706,18 @@ class ClientRelic extends Relic {
             stroke(0);
             strokeWeight(1);
         }
-
+        
         let p = -0.707 * this.radius;
         let size = 0.707 * this.radius - p;
         rotate(this.animationBase);
         rect(p, p, size, size);
         p = -0.707 * this.radius / 1.6;
         size = 0.707 * this.radius / 1.6 - p;
-        rotate(-this.animationBase * 4);
+        rotate(-this.animationBase * 6);
         rect(p, p, size, size);
         p = -0.707 * this.radius / 2.8;
         size = 0.707 * this.radius / 2.8 - p;
-        rotate(this.animationBase * 8);
+        rotate(this.animationBase * 12);
         rect(p, p, size, size);
 
         pop();

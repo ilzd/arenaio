@@ -69,6 +69,15 @@ io.sockets.on(
             game.announce(player.nickname + ' entrou na arena');
         });
 
+        socket.on('mousedist', function(data){
+            for (let i = 0; i < game.players.length; i++) {
+                if (game.players[i].id == data.id) {
+                    game.players[i].mouseDist = data.dist;
+                    break;
+                }
+            }
+        });
+
         socket.on('newdir', function (data) {
             for (let i = 0; i < game.players.length; i++) {
                 if (game.players[i].id == data.id) {
