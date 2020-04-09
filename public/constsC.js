@@ -19,6 +19,9 @@ const SKILL_ZITOR_SHIELD_SPEED_MULTIPLIER = 1.5;
 const SKILL_AREADAMAGE_RADIUS = 150;
 const SKILL_AREADAMAGE_DAMAGEPERSECOND = 17;
 
+//Explode arrows skill
+const SKILL_EXPLODEARROW_RADIUS = 120;
+
 //CLIENT ONLY
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 const VIRTUAL_WIDTH = 1570; //Virtual width
@@ -68,4 +71,7 @@ const SKILL_HEALAREA_DIAMETER = SKILL_HEALAREA_RADIUS * 2;
 const SKILL_AREADAMAGE_DIAMETER = SKILL_AREADAMAGE_RADIUS * 2;
 
 const SKILL_ZITOR_SHIELD_EXTRA_DIAMETER = SKILL_ZITOR_SHIELD_EXTRA_RADIUS * 2;
+
+const MATCH_DURATION_POS_X = Math.round(VIRTUAL_WIDTH * 0.02);
+const MATCH_DURATION_POS_Y = Math.round(VIRTUAL_HEIGHT * 0.075);;
 

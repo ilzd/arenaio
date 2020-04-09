@@ -30,6 +30,7 @@ class ClientGame extends Game {
             }
         }
         this.skillKeys = ['RMB', 'E', 'SPC'];
+        this.animations = [];
     }
 
     update(deltaTime) {
@@ -38,10 +39,20 @@ class ClientGame extends Game {
         this.positionCamera();
         this.drawMap();
         this.drawStars(deltaTime);
+        this.drawRelics(deltaTime);
         this.drawPlayers(deltaTime);
         this.drawProjectiles();
         this.checkPlayerAim();
+        this.updateAnimations(deltaTime);
         // this.checkForErasing(deltaTime);
+    }
+
+    updateAnimations(deltaTime){
+        for(let i  = this.animations.length - 1; i >= 0 ; i--){
+            this.animations[i].update(deltaTime);
+            this.animations[i].display();
+            if(!this.animations[i].active) this.animations.splice(i, 1);
+        }
     }
 
     addAnnouncement(message){
@@ -117,6 +128,12 @@ class ClientGame extends Game {
         }
     }
 
+    drawRelics(deltaTime) {
+        for (let i = 0; i < this.relics.length; i++) {
+            this.relics[i].display(deltaTime);
+        }
+    }
+
     drawPlayers(deltaTime) {
         for (let i = 0; i < this.players.length; i++) {
             this.players[i].display(this.players[i].id == clientId, deltaTime);
@@ -151,51 +168,57 @@ class ClientGame extends Game {
                 tint(100);
             }
 
-            image(skillsInfo[skill.skill].image, SKILLS_IMAGENS_POS_X + i * 100, SKILLS_IMAGENS_POS_Y, 80, 80);
+            image(skillsInfo[skill.skill].image, SKILLS_IMAGENS_POS_X + i * 90, SKILLS_IMAGENS_POS_Y, 70, 70);
 
             noStroke();
             fill(0);
-            rect(SKILLS_IMAGENS_POS_X + i * 100, SKILLS_IMAGENS_POS_Y, 80, map(skill.coldown, 0, skill.maxColdown, 0, 80));
+            rect(SKILLS_IMAGENS_POS_X + i * 90, SKILLS_IMAGENS_POS_Y, 70, map(skill.coldown, 0, skill.maxColdown, 0, 70));
 
             textSize(26);
             fill(255);
 
             if (skill.coldown > 0) {
                 let cd = round(skill.coldown * 10) / 10;
-                text(nf(cd, 0, 1), SKILLS_IMAGENS_POS_X + i * 100 + 4, SKILLS_IMAGENS_POS_Y + 74);
+                text(nf(cd, 0, 1), SKILLS_IMAGENS_POS_X + i * 90 + 4, SKILLS_IMAGENS_POS_Y + 64);
             }
-
-            textSize(14);
-            text(this.skillKeys[i], SKILLS_IMAGENS_POS_X + i * 100 + 4, SKILLS_IMAGENS_POS_Y + 15);
-
-            noFill();
-            rect(VIRTUAL_WIDTH * 0.15 + i * 100, VIRTUAL_HEIGHT - 90, 80, 80);
 
             stroke(0);
             strokeWeight(2);
-            rect(SKILLS_IMAGENS_POS_X + i * 100, SKILLS_IMAGENS_POS_Y, 80, 80);
+            textSize(14);
+            text(this.skillKeys[i], SKILLS_IMAGENS_POS_X + i * 90 + 4, SKILLS_IMAGENS_POS_Y + 15);
+
+            noFill();
+            //rect(VIRTUAL_WIDTH * 0.15 + i * 100, VIRTUAL_HEIGHT - 90, 70, 70);
+
+            rect(SKILLS_IMAGENS_POS_X + i * 90, SKILLS_IMAGENS_POS_Y, 70, 70);
+
+            fill(255);
+            textSize(40);
+            let min = Math.trunc(this.matchDuration / 60);
+            let sec = maxValue(Math.trunc(this.matchDuration % 60), 0);
+            text(nf(min, 2, 0) + ':' + nf(sec, 2, 0), MATCH_DURATION_POS_X, MATCH_DURATION_POS_Y);
         }
 
         noStroke();
 
         fill(255);
         let ang = map(this.camReference.prevLife, 0, this.camReference.maxLife, PI, 0);
-        arc(LIFE_GLOBE_X, LIFE_GLOBE_Y, 200, 200, -HALF_PI + ang, -HALF_PI - ang, OPEN);
+        arc(LIFE_GLOBE_X, LIFE_GLOBE_Y, 190, 190, -HALF_PI + ang, -HALF_PI - ang, OPEN);
 
         fill(255, 0, 0);
         ang = map(this.camReference.life, 0, this.camReference.maxLife, PI, 0);
-        arc(LIFE_GLOBE_X, LIFE_GLOBE_Y, 200, 200, -HALF_PI + ang, -HALF_PI - ang, OPEN);
+        arc(LIFE_GLOBE_X, LIFE_GLOBE_Y, 190, 190, -HALF_PI + ang, -HALF_PI - ang, OPEN);
 
         stroke(0);
         noFill();
 
-        ellipse(LIFE_GLOBE_X, LIFE_GLOBE_Y, 200, 200);
+        ellipse(LIFE_GLOBE_X, LIFE_GLOBE_Y, 190, 190);
 
         fill(255);
         textSize(24);
         push();
         textAlign(CENTER, CENTER);
-        text(Math.round(this.camReference.life) + ' / ' + this.camReference.maxLife, LIFE_GLOBE_X, LIFE_GLOBE_Y);
+        text(Math.round(this.camReference.life) + ' / ' + Math.round(this.camReference.maxLife), LIFE_GLOBE_X, LIFE_GLOBE_Y);
         pop();
 
         if (!this.camReference.active) {
@@ -208,17 +231,25 @@ class ClientGame extends Game {
     drawRanking() {
         this.sortPlayers();
 
-        if (game.keyMonitor.get('Tab')) {
+        if (!this.inMatch) {
             push();
             translate(RANK_POS_X, RANK_POS_Y);
-            noFill();
+            fill(0, 127);
             stroke(0);
             strokeWeight(4);
             rect(0, 0, RANK_WIDTH, RANK_HEIGHT);
             noStroke();
-            fill(255);
-            textSize(32);
+            textSize(28);
             for (let i = 0; i < 10; i++) {
+                if (i == 0) {
+                    fill(218, 165, 32);
+                } else if (i == 1) {
+                    fill(192, 192, 192);
+                } else if (i == 2) {
+                    fill(191, 137, 112);
+                } else {
+                    fill(255);
+                }
                 if (this.players.length > i)
                     text((i + 1) + 'º ' + this.players[i].nickname + ' - ' + this.players[i].points + ' points', 10, 42 * (i + 1));
             }
@@ -324,7 +355,7 @@ class ClientGame extends Game {
             if (this.typing) {
                 this.typing = false;
                 if (this.chatMessage.length > 0)
-                    socket.emit('chatmessage', { 'message': this.camReference.nickname + ': ' + this.chatMessage });
+                    socket.emit('chatmessage', { 'id': this.camReference.id, 'nickname': this.camReference.nickname, 'message': this.chatMessage });
                 this.chatMessage = '';
             } else {
                 this.typing = true;
@@ -424,8 +455,18 @@ class ClientGame extends Game {
         return star;
     }
 
+    buildRelic(data) {
+        let relic = new ClientRelic();
+        this.updateRelic(relic, data);
+        return relic;
+    }
+
     addStar(data) {
         this.stars.push(this.buildStar(data));
+    }
+
+    addRelic(data) {
+        this.relics.push(this.buildRelic(data));
     }
 }
 
@@ -615,5 +656,106 @@ class ClientStar extends Star {
 
 
         this.animationBase += deltaTime;
+    }
+}
+
+class ClientRelic extends Relic {
+    constructor() {
+        super();
+        this.animationBase = Math.random() * TWO_PI;
+    }
+
+    display(deltaTime) {
+        push();
+        translate(this.pos[0], this.pos[1]);
+
+        let relicColor = [0, 0, 0];
+        switch(this.type){
+            case 0:
+                relicColor = [255, 0, 0];
+                break;
+            case 1:
+                relicColor = [0, 255, 0];
+                break;
+            case 2:
+                relicColor = [0, 0, 255];
+                break;
+            case 3:
+                relicColor = [255, 255, 0];
+                break;
+            case 4:
+                relicColor = [255, 0, 255];
+                break;
+            default:
+                break;
+        }
+
+        if (this.respawn == 0) {
+            stroke(0);
+            strokeWeight(2);
+            fill(relicColor);
+        } else {
+            noFill();
+            strokeWeight(4);
+            stroke(relicColor);
+            arc(0, 0, this.radius * 2.5, this.radius * 2.5, 0, mapValue(this.respawn, 0, this.maxRespawn, TWO_PI, 0));
+
+            stroke(0);
+            strokeWeight(1);
+        }
+
+        let p = -0.707 * this.radius;
+        let size = 0.707 * this.radius - p;
+        rotate(this.animationBase);
+        rect(p, p, size, size);
+        p = -0.707 * this.radius / 1.6;
+        size = 0.707 * this.radius / 1.6 - p;
+        rotate(-this.animationBase * 4);
+        rect(p, p, size, size);
+        p = -0.707 * this.radius / 2.8;
+        size = 0.707 * this.radius / 2.8 - p;
+        rotate(this.animationBase * 8);
+        rect(p, p, size, size);
+
+        pop();
+
+        this.animationBase += deltaTime;
+    }
+}
+
+class Animation {
+    constructor(){
+        this.active = true;
+        this.maxDuration = 0;
+        this.duration = 0;
+        this.pos = [0, 0];
+    }
+
+    update(deltaTime){
+        this.duration -= deltaTime;
+        if(this.duration < 0) this.active = false;
+    }
+
+    display(){
+
+    }
+}
+
+class ExplosionAnimation extends Animation {
+    constructor(data){
+        super();
+        this.maxDuration = 0.3;
+        this.duration = this.maxDuration;
+        this.radius = data.radius;
+        this.pos = data.pos;
+        this.color = data.color;
+    }
+
+    display(){
+        noFill();
+        stroke(this.color);
+        strokeWeight(2);
+        let dia = map(this.duration, 0, this.maxDuration, 0, this.radius * 2);
+        ellipse(this.pos[0], this.pos[1], dia, dia);
     }
 }

@@ -51,7 +51,15 @@ io.sockets.on(
                 socket.emit('newstar', game.getStarData(game.stars[i].id));
             }
 
+            for (let i = 0; i < game.relics.length; i++) {
+                socket.emit('newrelic', game.getRelicData(game.relics[i].id));
+            }
+
             socket.emit('walls', game.walls);
+
+            socket.emit('matchduration', game.matchDuration);
+
+            socket.emit('matchstate', game.inMatch);
 
             data.id = socket.id;
             let player = game.buildPlayer(data);
@@ -108,7 +116,11 @@ io.sockets.on(
         });
 
         socket.on('chatmessage', function (data) {
-            io.emit('chatmessage', data);
+            if(data.message == '/restart'){
+                game.restartVote(data.id);
+            } else {
+                io.emit('chatmessage', {'message': data.nickname + ': ' + data.message});
+            }
         });
     }
 );
@@ -117,6 +129,7 @@ server.listen(port);
 
 setInterval(update, 1);
 setInterval(updateImportant, 1000 / 4);
+setInterval(updateLessImportant, 3000);
 
 var deltaTime = 0; //variation in time since last tick
 var prevDate = Date.now(); //last date saved, used to calculate deltaTime
@@ -136,6 +149,18 @@ function updateImportant() {
             'id': player.id,
             'pos': player.pos
         });
+    }
+}
+
+function updateLessImportant(){
+    io.emit('matchduration', game.matchDuration);
+
+    for(let i = 0; i < game.stars.length; i++){
+        io.emit('updatestar', {'id': game.stars[i].id, 'respawn': game.stars[i].respawn});
+    }
+
+    for(let i = 0; i < game.relics.length; i++){
+        io.emit('updaterelic', {'id': game.relics[i].id, 'respawn': game.relics[i].respawn});
     }
 }
 

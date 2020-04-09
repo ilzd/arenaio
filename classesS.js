@@ -1,6 +1,7 @@
 const utils = require('./utilsS.js');
 const normalizeVector = utils.normalizeVector;
 const distVector = utils.distVector;
+const distVectorSqr = utils.distVectorSqr;
 const subVector = utils.subVector;
 const magVector = utils.magVector;
 const multVector = utils.multVector;
@@ -62,7 +63,7 @@ class Player extends GameObject {
         this.dir = normalizeVector(this.dir);
     }
 
-    fixForcedDir(){
+    fixForcedDir() {
         this.forcedDir = normalizeVector(this.forcedDir);
     }
 
@@ -72,10 +73,10 @@ class Player extends GameObject {
         let finalSlow = 1;
         let finalFast = 1;
 
-        if(this.forced > 0){
+        if (this.forced > 0) {
             finalDir = this.forcedDir;
             finalSpeed = this.forcedSpeed;
-        } else if(!this.stunned) {
+        } else if (!this.stunned) {
             finalDir = this.dir;
             finalSpeed = this.speed;
             finalSlow = this.slow;
@@ -104,11 +105,11 @@ class Player extends GameObject {
         }
     }
 
-    regen(deltaTime){
+    regen(deltaTime) {
         this.life = minValue(this.maxLife, this.life + this.lifeRegen * deltaTime);
     }
 
-    updateEffects(deltaTime){
+    updateEffects(deltaTime) {
         this.stunned = maxValue(0, this.stunned - deltaTime);
         this.silenced = maxValue(0, this.silenced - deltaTime);
         this.reflecting = maxValue(0, this.reflecting - deltaTime);
@@ -117,8 +118,8 @@ class Player extends GameObject {
         this.areaHealing = maxValue(0, this.areaHealing - deltaTime);
     }
 
-    updateColdowns(deltaTime){
-        for(let i = 0; i < this.activesInfo.length; i++){
+    updateColdowns(deltaTime) {
+        for (let i = 0; i < this.activesInfo.length; i++) {
             this.activesInfo[i].coldown = maxValue(0, this.activesInfo[i].coldown - deltaTime);
         }
     }
@@ -132,14 +133,17 @@ class Game {
         this.players = [];
         this.projectiles = [];
         this.stars = [];
-        this.walls= [];
+        this.relics = [];
+        this.walls = [];
+        this.matchDuration = 240;
+        this.inMatch = true;
     }
 
     checkColisions(deltaTime) {
         //related to players
         for (let i = 0; i < this.players.length; i++) {
             let plr = this.players[i];
-            if(!plr.active) continue;
+            if (!plr.active) continue;
 
             //checking colision between players and map extremes
             if (plr.pos[0] - plr.radius < 0) {
@@ -153,24 +157,24 @@ class Game {
                 plr.pos[1] = this.mapHeight - plr.radius;
             }
 
-            if(plr.imaterial > 0) continue;
+            if (plr.imaterial > 0) continue;
 
             //checking colision between players (maybe keep this only in the server)
             for (let j = 0; j < this.players.length; j++) {
                 let plr2 = this.players[j];
-                if(!plr2.active || plr2.imaterial > 0) continue;
+                if (!plr2.active || plr2.imaterial > 0) continue;
 
                 if (i != j) {
                     let minDist = plr.radius + plr2.radius;
-                    let dist = distVector(plr.pos, plr2.pos);
-                    if (dist < minDist) {
+                    let distSqr = distVectorSqr(plr.pos, plr2.pos);
+                    if (distSqr < minDist * minDist) {
                         let colisionDir = subVector(plr2.pos, plr.pos);
                         let colisionMag = magVector(colisionDir) - minDist;
                         colisionDir = normalizeVector(colisionDir);
                         plr.pos = subVector(plr.pos, multVector(colisionDir, -colisionMag * (plr2.radius / minDist)));
                         plr2.pos = subVector(plr2.pos, multVector(colisionDir, colisionMag * (plr.radius / minDist)));
                     }
-                    if(plr.repulses && dist < 500) {
+                    if (plr.repulses && distSqr < 500 * 500) {
                         let colisionDir = subVector(plr2.pos, plr.pos);
                         colisionDir = normalizeVector(colisionDir);
                         plr2.pos[0] += colisionDir[0] * deltaTime * 125;
@@ -182,7 +186,7 @@ class Game {
 
             let x = Math.trunc(plr.pos[0] / this.blockSize), y = Math.trunc(plr.pos[1] / this.blockSize);
 
-            if(plr.posToValidate){
+            if (plr.posToValidate) {
                 plr.posToValidate = false;
                 if (this.walls[x][y]) {
                     this.validatePosition(plr);
@@ -190,24 +194,24 @@ class Game {
             }
 
             for (let j = x - 1; j < x + 2; j++) {
-                if(j < 0 || j > this.mapWidth / this.blockSize - 1) continue;
+                if (j < 0 || j > this.mapWidth / this.blockSize - 1) continue;
                 for (let k = y - 1; k < y + 2; k++) {
-                    if(k < 0 || k > this.mapHeight / this.blockSize - 1) continue;
+                    if (k < 0 || k > this.mapHeight / this.blockSize - 1) continue;
 
-                    if(this.walls[j][k]){
+                    if (this.walls[j][k]) {
                         let wallX = j * this.blockSize, wallY = k * this.blockSize;
                         let cX = plr.pos[0], cY = plr.pos[1];
-                        if(cX < wallX){
+                        if (cX < wallX) {
                             cX = wallX;
-                        } else if(cX > wallX + this.blockSize) {
+                        } else if (cX > wallX + this.blockSize) {
                             cX = wallX + this.blockSize;
                         }
-                        if(cY < wallY){
+                        if (cY < wallY) {
                             cY = wallY;
-                        } else if(cY > wallY + this.blockSize) {
+                        } else if (cY > wallY + this.blockSize) {
                             cY = wallY + this.blockSize;
                         }
-                        if (distVector(plr.pos, [cX, cY]) < plr.radius) {
+                        if (distVectorSqr(plr.pos, [cX, cY]) < plr.radius * plr.radius) {
                             let colisionDir = subVector(plr.pos, [cX, cY]);
                             let colisionMag = magVector(colisionDir) - plr.radius;
                             colisionDir = normalizeVector(colisionDir);
@@ -239,6 +243,9 @@ class Game {
     }
 
     update(deltaTime) {
+        this.manageDuration(deltaTime);
+        if (!this.inMatch) return;
+
         for (let i = 0; i < this.players.length; i++) {
             let plr = this.players[i];
             plr.update(deltaTime);
@@ -247,10 +254,17 @@ class Game {
             let proj = this.projectiles[i];
             proj.move(deltaTime);
         }
-        for(let i = 0; i < this.stars.length; i++){
+        for (let i = 0; i < this.stars.length; i++) {
             this.stars[i].update(deltaTime);
         }
+        for (let i = 0; i < this.relics.length; i++) {
+            this.relics[i].update(deltaTime);
+        }
         this.checkColisions(deltaTime);
+    }
+
+    manageDuration(deltaTime) {
+        this.matchDuration -= deltaTime;
     }
 
     updatePlayer(player, data) {
@@ -261,49 +275,52 @@ class Game {
                     player.fixDir();
                 } else if (prop == 'aimdir') {
                     player.fixAimDir();
-                } else if(prop == 'forcedDir'){
+                } else if (prop == 'forcedDir') {
                     player.fixForcedDir();
-                } else if(prop == 'build'){
+                } else if (prop == 'build') {
                     let actives = data[prop].actives;
-                    for(let i = 0; i < actives.length; i++){
+                    for (let i = 0; i < actives.length; i++) {
                         let coldown;
 
                         switch (actives[i]) {
                             case 0: //Flash
-                                coldown = 5;
+                                coldown = 6;
                                 break;
                             case 1: //Ímpeto
-                                coldown = 5;
+                                coldown = 6;
                                 break;
                             case 2: //Stun projectile
-                                coldown = 5;
+                                coldown = 6;
                                 break;
                             case 3: //Reflective Shield
-                                coldown = 5;
+                                coldown = 6.5;
                                 break;
                             case 4: //Invisibility
-                                coldown = 8;
+                                coldown = 8.5;
                                 break;
                             case 5: //Imaterial
-                                coldown = 7;
+                                coldown = 7.5;
                                 break;
                             case 6: //Proj Push
-                                coldown = 5;
+                                coldown = 7;
                                 break;
                             case 7: //Proj Pull
-                                coldown = 5;
+                                coldown = 6.8;
                                 break;
                             case 8: //Area Heal
-                                coldown = 12;
+                                coldown = 13;
                                 break;
                             case 9: //Dash
                                 coldown = 6;
+                                break;
+                            case 10: //explode proj
+                                coldown = 4;
                                 break;
                             default:
                                 break;
                         }
 
-                        player.activesInfo[i] = {'skill': actives[i], 'maxColdown': coldown, 'coldown': 0}
+                        player.activesInfo[i] = { 'skill': actives[i], 'maxColdown': coldown, 'coldown': 0 }
                     }
                 }
             }
@@ -338,6 +355,14 @@ class Game {
         }
     }
 
+    updateRelic(relic, data) {
+        for (let prop in relic) {
+            if ("undefined" != typeof (data[prop])) {
+                relic[prop] = data[prop];
+            }
+        }
+    }
+
     removeProjectile(id) {
         for (let i = 0; i < this.projectiles.length; i++) {
             if (this.projectiles[i].id == id) {
@@ -351,6 +376,15 @@ class Game {
         for (let i = 0; i < this.stars.length; i++) {
             if (this.stars[i].id == id) {
                 this.stars.splice(i, 1);
+                break;
+            }
+        }
+    }
+
+    removeRelic(id) {
+        for (let i = 0; i < this.relics.length; i++) {
+            if (this.relics[i].id == id) {
+                this.relics.splice(i, 1);
                 break;
             }
         }
@@ -375,7 +409,7 @@ class Projectile extends GameObject {
         this.dir = normalizeVector(this.dir);
     }
 
-    fixForcedDir(){
+    fixForcedDir() {
         this.forcedDir = normalizeVector(this.forcedDir);
     }
 
@@ -385,15 +419,28 @@ class Projectile extends GameObject {
     }
 }
 
-class Star extends GameObject{
-    constructor(){
+class Star extends GameObject {
+    constructor() {
         super();
         this.maxRespawn = 25;
         this.respawn = this.maxRespawn;
-        
+
     }
 
-    update(deltaTime){
+    update(deltaTime) {
+        this.respawn = maxValue(0, this.respawn - deltaTime);
+    }
+}
+
+class Relic extends GameObject {
+    constructor() {
+        super();
+        this.maxRespawn = 10;
+        this.respawn = this.maxRespawn;
+        this.type = 0;
+    }
+
+    update(deltaTime) {
         this.respawn = maxValue(0, this.respawn - deltaTime);
     }
 }
@@ -403,5 +450,6 @@ module.exports = {
     Player,
     Game,
     Projectile,
-    Star
+    Star,
+    Relic
 }

@@ -28,6 +28,10 @@ function distVector(v1, v2){
     return magVector(subVector(v2, v1));
 }
 
+function distVectorSqr(v1, v2){
+    return (v2[0] - v1[0]) * (v2[0] - v1[0]) + (v2[1] - v1[1]) * (v2[1] - v1[1]);
+}
+
 function mapValue(val, min, max, minR, maxR){
     let n1 = val - min, n2 = max - min;
     return minR + (maxR - minR) * (n1 / n2);

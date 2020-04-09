@@ -18,17 +18,18 @@ var skillsInfo = [];
 var passivesInfo = [];
 var bowsInfo = [];
 var actives = [0, 1, 2];
-var passives = [0, 1];
+var passives = [0, 1, 2];
 var weapon = 0;
+var displayedFps = 0;
 
 function preload() {
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 11; i++) {
         skillsInfo[i] = {
             'image': loadImage('./images/skill' + i + '.png'),
             'description': getSkillDescription(i)
         };
     }
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 9; i++) {
         passivesInfo[i] = {
             'image': loadImage('./images/passive' + i + '.png'),
             'description': getPassiveDescription(i)
@@ -127,6 +128,9 @@ function getSkillDescription(skill) {
         case 9:
             result = 'Desliza rapidamente na direção do cursor';
             break;
+        case 10:
+            result = 'Explode seus projéteis aplicando seus efeitos em uma curta área no local da explosão';
+            break;
         default:
             break;
     }
@@ -154,6 +158,15 @@ function getPassiveDescription(passive) {
             break;
         case 5:
             result = 'Você causa dano aos inimigos que estão muito próximos a você';
+            break;
+        case 6:
+            result = 'Sua vida máxima é significativamente maior';
+            break;
+        case 7:
+            result = 'Todo dano causado por você é aumentado significativamente';
+            break;
+        case 8:
+            result = 'O tempo de recarga de suas habilidades é significativamente menor';
             break;
         default:
             break;
@@ -190,20 +203,20 @@ function buildForm() {
     for (let i = 0; i < 3; i++) {
         let skillsDiv = document.getElementById('skillImages' + i);
         let skillInfo = document.getElementById('skillInfo' + i);
-        for (let j = 0; j < 10; j++) {
+        for (let j = 0; j < 11; j++) {
             let skill = new Image();
             skill.src = './images/skill' + j + '.png';
             skill.style.margin = 4;
             skill.width = 50;
             skill.classList.add('skill' + i);
-            if (j == i) { 
+            if (j == i) {
                 skill.classList.add('selected');
                 skillInfo.textContent = getSkillDescription(j);
-             }
+            }
             skill.addEventListener('click', function () {
                 let validated = true;
-                for(let k = 0; k < actives.length; k++){
-                    if(actives[k] == j){
+                for (let k = 0; k < actives.length; k++) {
+                    if (actives[k] == j) {
                         validated = false;
                         break;
                     }
@@ -223,10 +236,10 @@ function buildForm() {
         }
     }
 
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < 3; i++) {
         let passiveDiv = document.getElementById('passiveImages' + i);
         let passiveInfo = document.getElementById('passiveInfo' + i);
-        for (let j = 0; j < 6; j++) {
+        for (let j = 0; j < 9; j++) {
             let passive = new Image();
             passive.src = './images/passive' + j + '.png';
             passive.style.margin = 4;
@@ -238,8 +251,8 @@ function buildForm() {
             }
             passive.addEventListener('click', function () {
                 let validated = true;
-                for(let k = 0; k < passives.length; k++){
-                    if(passives[k] == j){
+                for (let k = 0; k < passives.length; k++) {
+                    if (passives[k] == j) {
                         validated = false;
                         break;
                     }
@@ -266,7 +279,7 @@ function sendForm() {
     socket.emit('joinrequest', {
         'nickname': document.getElementById('nickname').value,
         'color': [color.r, color.g, color.b],
-        'radius': 50,
+        'radius': 55,
         'build': {
             'basicAttack': weapon,
             'actives': actives,
@@ -299,8 +312,16 @@ function registerEvents() {
         }
     });
 
+    socket.on('matchstate', function (data) {
+        if (inGame) game.inMatch = data;
+    });
+
     socket.on('newplayer', function (data) {
         if (inGame) game.addPlayer(data);
+    });
+
+    socket.on('newexplosion', function(data){
+        if(inGame) game.animations.push(new ExplosionAnimation(data));
     });
 
     socket.on('removeplayer', function (data) {
@@ -341,6 +362,10 @@ function registerEvents() {
         if (inGame) game.addStar(data);
     });
 
+    socket.on('newrelic', function (data) {
+        if (inGame) game.addRelic(data);
+    });
+
     socket.on('walls', function (data) {
         if (inGame) {
             game.walls = data;
@@ -367,6 +392,17 @@ function registerEvents() {
         }
     });
 
+    socket.on('updaterelic', function (data) {
+        if (inGame) {
+            for (let i = 0; i < game.relics.length; i++) {
+                if (game.relics[i].id == data.id) {
+                    game.updateRelic(game.relics[i], data);
+                    break;
+                }
+            }
+        }
+    });
+
     socket.on('removeprojectile', function (data) {
         if (inGame) game.removeProjectile(data.id);
     });
@@ -375,12 +411,20 @@ function registerEvents() {
         if (inGame) game.removeStar(data.id);
     });
 
+    socket.on('removerelic', function (data) {
+        if (inGame) game.removeRelic(data.id);
+    });
+
     socket.on('chatmessage', function (data) {
         if (inGame) game.addChatMessage(data.message);
     });
 
     socket.on('announcement', function (data) {
         if (inGame) game.addAnnouncement(data.message);
+    });
+
+    socket.on('matchduration', function (data) {
+        if (inGame) game.matchDuration = data;
     });
 }
 
@@ -411,8 +455,10 @@ function drawStats() {
     stroke(0)
     strokeWeight(1);
     textSize(16);
-    if (inGame && game.inGame) text((int)(game.camReference.latency * 1000) + ' ms', 90, 20);
-    text('FPS: ' + (int)(frameRate()), 5, 20);
+    if (inGame && game.inGame) text((int)(game.camReference.latency * 1000) + ' ms', VIRTUAL_WIDTH - 45, VIRTUAL_HEIGHT - 10);
+    text('FPS: ' + (int)(displayedFps), VIRTUAL_WIDTH - 120, VIRTUAL_HEIGHT - 10);
+
+    if (frameCount % 20 == 0) displayedFps = frameRate();
 }
 
 function calculateDeltaTime() {
