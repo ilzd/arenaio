@@ -96,7 +96,6 @@ io.sockets.on(
                     break;
                 }
             }
-            socket.broadcast.emit('update', data);
         });
 
         socket.on('pingtest', function () {
@@ -139,6 +138,7 @@ server.listen(port);
 setInterval(update, 1);
 setInterval(updateImportant, 1000 / 4);
 setInterval(updateLessImportant, 3000);
+setInterval(updateAim, 1000 / 30);
 
 var deltaTime = 0; //variation in time since last tick
 var prevDate = Date.now(); //last date saved, used to calculate deltaTime
@@ -149,6 +149,13 @@ function update() {
     calculateDeltaTime();
     game.update(deltaTime);
     //console.log(deltaTime);
+}
+
+function updateAim(){
+    for(let i = 0; i < game.players.length; i++){
+        let plr = game.players[i];
+        plr.socket.broadcast.emit('update', {'id': plr.id, 'aimDir': plr.aimDir});
+    }
 }
 
 function updateImportant() {

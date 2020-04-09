@@ -38,7 +38,8 @@ class ClientGame extends Game {
         super.update(deltaTime);
         this.positionCamera();
         this.drawMap();
-        this.drawLavaPools();
+        this.drawLavaPools(deltaTime);
+        this.drawWalls();
         this.updateAnimations(deltaTime);
         this.drawStars(deltaTime);
         this.drawRelics(deltaTime);
@@ -135,9 +136,9 @@ class ClientGame extends Game {
         }
     }
 
-    drawLavaPools() {
+    drawLavaPools(deltaTime) {
         for (let i = 0; i < this.lavaPools.length; i++) {
-            this.lavaPools[i].display();
+            this.lavaPools[i].display(deltaTime);
         }
     }
 
@@ -159,8 +160,22 @@ class ClientGame extends Game {
         noStroke();
         for (let i = 0; i < MAP_HORIZONTAL_SQUARES; i++) {
             for (let j = 0; j < MAP_VERTICAL_SQUARES; j++) {
-                fill(this.mapColors[i][j]);
-                rect(i * MAP_SQUARE_STEP, j * MAP_SQUARE_STEP, MAP_SQUARE_STEP + 1, MAP_SQUARE_STEP + 1);
+                if (!this.walls[i][j]) {
+                    fill(this.mapColors[i][j]);
+                    rect(i * MAP_SQUARE_STEP, j * MAP_SQUARE_STEP, MAP_SQUARE_STEP + 1, MAP_SQUARE_STEP + 1);
+                }
+            }
+        }
+    }
+
+    drawWalls() {
+        noStroke();
+        for (let i = 0; i < MAP_HORIZONTAL_SQUARES; i++) {
+            for (let j = 0; j < MAP_VERTICAL_SQUARES; j++) {
+                if (this.walls[i][j]) {
+                    fill(this.mapColors[i][j]);
+                    rect(i * MAP_SQUARE_STEP, j * MAP_SQUARE_STEP, MAP_SQUARE_STEP + 1, MAP_SQUARE_STEP + 1);
+                }
             }
         }
     }
@@ -746,18 +761,20 @@ class ClientRelic extends Relic {
 class ClientLavaPool extends LavaPool {
     constructor(owner) {
         super(owner);
-        this.animationBase = Math.random() * TWO_PI;
+        this.animationBase = 0;
     }
 
-    display() {
+    display(deltaTime) {
         stroke(255, 0, 0);
         strokeWeight(4);
         if (this.activated) {
-            fill(200, 0, 0);
+            fill(180 + noise(this.animationBase) * 70, 0, 0);
         } else {
             noFill();
         }
         ellipse(this.pos[0], this.pos[1], this.radius * 2, this.radius * 2);
+
+        this.animationBase += deltaTime;
     }
 }
 
@@ -792,7 +809,7 @@ class ExplosionAnimation extends Animation {
     display() {
         noFill();
         stroke(this.color);
-        strokeWeight(2);
+        strokeWeight(3);
         let dia = map(this.duration, 0, this.maxDuration, 0, this.radius * 2);
         ellipse(this.pos[0], this.pos[1], dia, dia);
     }

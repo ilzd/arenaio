@@ -460,11 +460,11 @@ class ServerGame extends Game {
                 lavaPool.activationTime -= deltaTime;
                 if (lavaPool.activationTime < 0) {
                     lavaPool.activated = true;
-                    this.io.emit('updatelavapool', {'id': lavaPool.id, 'activated': lavaPool.activated});
+                    this.io.emit('updatelavapool', { 'id': lavaPool.id, 'activated': lavaPool.activated });
                 } else {
                     continue;
                 }
-            } 
+            }
 
             for (let i = 0; i < this.players.length; i++) {
                 let plr = this.players[i];
@@ -472,7 +472,9 @@ class ServerGame extends Game {
 
                 let minDist = plr.radius + lavaPool.radius;
                 if (distVectorSqr(plr.pos, lavaPool.pos) < minDist * minDist) {
-                    plr.takeDamage(lavaPool.owner, lavaPool.damage * deltaTime);
+                    //plr.takeDamage(lavaPool.owner, lavaPool.damage * deltaTime);
+                    plr.deltaLife -= lavaPool.damage * deltaTime;
+                    plr.lastHitBy = lavaPool.owner;
                 }
             }
         }
@@ -975,7 +977,7 @@ class ServerGame extends Game {
                             }
                             break;
                         case 11:
-                            let lavaDist = minValue(600, player.mouseDist);
+                            let lavaDist = minValue(500, player.mouseDist);
                             let lavaData = {
                                 'id': this.getNewUniqueId(),
                                 'duration': 3,
@@ -1029,7 +1031,7 @@ class ServerGame extends Game {
                 attackSpeed = 1.5;
                 break;
             case 1:
-                attackSpeed = 1.5;
+                attackSpeed = 1.4;
                 break;
             case 2:
                 attackSpeed = 0.7;
@@ -1119,6 +1121,7 @@ class ServerGame extends Game {
     }
 
     addPlayer(socket, player) {
+        player.socket = socket;
         this.players.push(player);
         this.addLatencyData(socket);
         if (this.players.length > this.relics.length) this.addRelic();
@@ -1179,7 +1182,7 @@ class ServerGame extends Game {
     addRelic() {
         let relicData = {
             'id': this.getNewUniqueId(),
-            'radius': 30,
+            'radius': 20,
         };
         let relic = this.buildRelic(relicData);
         this.respawnRelic(relic);
@@ -1214,7 +1217,7 @@ class ServerPlayer extends Player {
         this.game = game;
         this.respawn = 0;
         this.attackIntent = false;
-        //this.socket;
+        this.socket;
         this.attacked = false;
         this.messages = [];
         this.slowEffects = [];
@@ -1226,6 +1229,9 @@ class ServerPlayer extends Player {
         this.damageMultiplier = 1;
         this.data;
         this.mouseDist = 0;
+        this.deltaLife = 0;
+        this.dotTimer = 0;
+        this.lastHitBy = this;
     }
 
     attack(deltaTime) {
@@ -1265,6 +1271,8 @@ class ServerPlayer extends Player {
                 this.applyAreaDamage(deltaTime);
             }
 
+            this.resolveDot(deltaTime);
+
             if (this.wasImaterial && this.imaterial == 0) {
                 this.wasImaterial = false;
                 this.game.validatePosition(this);
@@ -1278,6 +1286,20 @@ class ServerPlayer extends Player {
         }
     }
 
+    resolveDot(deltaTime) {
+        this.dotTimer -= deltaTime;
+        if (this.dotTimer < 0) {
+            if (this.deltaLife > 0) {
+                this.heal(this.deltaLife);
+            } else {
+                this.takeDamage(this.lastHitBy, -this.deltaLife);
+            }
+
+            this.deltaLife = 0;
+            this.dotTimer += 0.25;
+        }
+    }
+
     applyAreaHeal(deltaTime) {
         for (let i = 0; i < this.game.players.length; i++) {
             let player = this.game.players[i];
@@ -1285,7 +1307,8 @@ class ServerPlayer extends Player {
 
             let minDist = consts.SKILL_HEALAREA_RADIUS + player.radius;
             if (distVectorSqr(this.pos, player.pos) < minDist * minDist) {
-                player.heal(consts.SKILL_HEALAREA_HEALPERSECOND * deltaTime);
+                //player.heal(consts.SKILL_HEALAREA_HEALPERSECOND * deltaTime);
+                player.deltaLife += consts.SKILL_HEALAREA_HEALPERSECOND * deltaTime;
             }
         }
     }
@@ -1297,7 +1320,9 @@ class ServerPlayer extends Player {
 
             let minDist = consts.SKILL_AREADAMAGE_RADIUS + player.radius;
             if (distVectorSqr(this.pos, player.pos) < minDist * minDist) {
-                player.takeDamage(this, consts.SKILL_AREADAMAGE_DAMAGEPERSECOND * deltaTime);
+                //player.takeDamage(this, consts.SKILL_AREADAMAGE_DAMAGEPERSECOND * deltaTime);
+                player.deltaLife -= consts.SKILL_AREADAMAGE_DAMAGEPERSECOND * deltaTime;
+                player.lastHitBy = this;
             }
         }
     }
