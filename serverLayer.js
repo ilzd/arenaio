@@ -40,7 +40,7 @@ class ServerGame extends Game {
         super();
         this.io = io;
         this.latencyData = [];
-        this.pingTestTriggerDelay = 0.2;
+        this.pingTestTriggerDelay = 0.1;
         this.pingTestSampleSize = 5;
         this.uniqueId = 0;
         this.mapWidth = consts.MAP_WIDTH;
@@ -367,6 +367,7 @@ class ServerGame extends Game {
             this.timeMultiplierCount++;
             this.timeMultiplier += 0.2;
             this.io.emit('timemultiplier', this.timeMultiplier);
+            this.announce('Coletáveis agora renascem mais rapidamente');
         }
     }
 
@@ -374,8 +375,11 @@ class ServerGame extends Game {
         this.inMatch = true;
         this.io.emit("matchstate", this.inMatch);
         this.matchDuration = this.matchMaxDuration;
+        this.timeMultiplier = 1;
+        this.timeMultiplierCount = 0;
         this.announce('A partida começou');
         this.io.emit('matchduration', this.matchDuration);
+        this.io.emit('timemultiplier', this.timeMultiplier);
 
         for (let i = 0; i < this.projectiles.length; i++) {
             this.projectiles[i].active = false;
@@ -388,7 +392,6 @@ class ServerGame extends Game {
 
         for (let i = 0; i < this.relics.length; i++) {
             this.respawnRelic(this.relics[i]);
-            this.io.emit('updaterelic', this.getRelicData(this.relics[i].id));
         }
 
         for (let i = 0; i < this.players.length; i++) {

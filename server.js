@@ -70,6 +70,8 @@ io.sockets.on(
             game.addPlayer(socket, player);
             io.emit('newplayer', game.getPlayerData(player.id));
 
+            console.log(player.nickname + ' entrou na partida');
+
             game.announce(player.nickname + ' entrou na arena');
         });
 
@@ -175,7 +177,7 @@ function updateImportant() {
 function updateLessImportant(){
     io.emit('matchduration', game.matchDuration);
 
-    socket.emit('timemultiplier', game.timeMultiplier);  
+    io.emit('timemultiplier', game.timeMultiplier);  
 
     for(let i = 0; i < game.stars.length; i++){
         io.emit('updatestar', {'id': game.stars[i].id, 'respawn': game.stars[i].respawn});
