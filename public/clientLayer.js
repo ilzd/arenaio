@@ -166,6 +166,14 @@ class ClientGame extends Game {
                 }
             }
         }
+
+        stroke(30);
+        strokeWeight(4);
+        fill(15);
+        for(let i = 0; i < this.holes.length; i++){
+            let hole = this.holes[i];
+            ellipse(hole.pos[0], hole.pos[1], hole.radius * 2, hole.radius * 2);
+        }
     }
 
     drawWalls() {

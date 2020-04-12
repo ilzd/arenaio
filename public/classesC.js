@@ -42,6 +42,7 @@ class Player extends GameObject {
         this.lifeRegen = 3;
         this.repulses = false;
         this.areaDamage = false;
+        this.collidedWith = null;
     }
 
     fixAimDir() {
@@ -125,8 +126,10 @@ class Game {
         this.relics = [];
         this.lavaPools = [];
         this.walls = [];
+        this.holes = [];
         this.matchDuration = 240;
         this.inMatch = true;
+        this.timeMultiplier = 1;
     }
 
     checkColisions(deltaTime) {
@@ -163,12 +166,15 @@ class Game {
                         colisionDir = normalizeVector(colisionDir);
                         plr.pos = subVector(plr.pos, multVector(colisionDir, -colisionMag * (plr2.radius / minDist)));
                         plr2.pos = subVector(plr2.pos, multVector(colisionDir, colisionMag * (plr.radius / minDist)));
+                        plr.collidedWith = plr2;
+                        plr2.collidedWith = plr;
                     }
                     if (plr.repulses && distSqr < 500 * 500) {
                         let colisionDir = subVector(plr2.pos, plr.pos);
                         colisionDir = normalizeVector(colisionDir);
                         plr2.pos[0] += colisionDir[0] * deltaTime * 125;
                         plr2.pos[1] += colisionDir[1] * deltaTime * 125;
+                        plr2.collidedWith = plr;
                     }
 
                 }
@@ -208,6 +214,28 @@ class Game {
                             plr.pos = subVector(plr.pos, multVector(colisionDir, colisionMag));
                         }
                     }
+
+                }
+            }
+        }
+    }
+
+    checkHoles(deltaTime){
+        for(let i = 0; i < this.holes.length; i++){
+            let hole = this.holes[i];
+            for(let j = 0; j < this.players.length; j++){
+                let player = this.players[j];
+                if(!player.active) continue;
+
+                let minDistSqr = player.radius + hole.radius;
+                minDistSqr *= minDistSqr;
+                let distSqr = distVectorSqr(player.pos, hole.pos);
+                if(distSqr < minDistSqr){
+                    let pullSpeed = mapValue(distSqr, minDistSqr, 0, 0, 300);
+                    let pullDir = subVector(hole.pos, player.pos);
+                    pullDir = normalizeVector(pullDir);
+                    player.pos[0] += pullDir[0] * deltaTime * pullSpeed;
+                    player.pos[1] += pullDir[1] * deltaTime * pullSpeed;
                 }
             }
         }
@@ -246,15 +274,16 @@ class Game {
             proj.move(deltaTime);
         }
         for (let i = 0; i < this.stars.length; i++) {
-            this.stars[i].update(deltaTime);
+            this.stars[i].update(deltaTime * this.timeMultiplier);
         }
         for (let i = 0; i < this.relics.length; i++) {
-            this.relics[i].update(deltaTime);
+            this.relics[i].update(deltaTime * this.timeMultiplier);
         }
         for (let i = 0; i < this.lavaPools.length; i++) {
             this.lavaPools[i].update(deltaTime);
         }
         this.checkColisions(deltaTime);
+        this.checkHoles(deltaTime);
     }
 
     manageDuration(deltaTime) {
@@ -469,8 +498,8 @@ class LavaPool extends GameObject {
     }
 
     update(deltaTime) {
-        if(!this.activated) return;
-        this.duration = maxValue(0, this.respawn - deltaTime);
-        if(this.duration == 0) this.active = false;
+        if (!this.activated) return;
+        this.duration = maxValue(0, this.duration - deltaTime);
+        if (this.duration == 0) this.active = false;
     }
 }

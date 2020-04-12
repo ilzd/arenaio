@@ -52,6 +52,7 @@ class ServerGame extends Game {
         this.restartVotes = [];
         this.restartVoting = false;
         this.restartVoteTimer = 10;
+        this.timeMultiplierCount = 0;
 
         let starData = {
             'id': this.getNewUniqueId(),
@@ -61,7 +62,7 @@ class ServerGame extends Game {
         let star = this.buildStar(starData);
         this.addStar(star);
 
-        this.generateWalls();
+        this.generateMap();
     }
 
     restartVote(id) {
@@ -92,19 +93,7 @@ class ServerGame extends Game {
         }
     }
 
-    generateWalls() {
-        // for (let i = 0; i < consts.MAP_HORIZONTAL_SQUARES; i++) {
-        //     this.walls[i] = [];
-        //     for (let j = 0; j < consts.MAP_VERTICAL_SQUARES; j++) {
-        //         let chance = Math.random();
-        //         if (chance < 0.15) {
-        //             this.walls[i].push(true);
-        //         } else {
-        //             this.walls[i].push(false);
-        //         }
-        //     }
-        // }
-
+    generateMap() {
         this.walls = [
             [false, false, false, false, true, false, false, false, false, false, false, false, false, false, true, false, false, false, false],
             [false, true, true, false, false, false, true, true, false, true, false, true, true, false, false, false, true, true, false],
@@ -127,12 +116,31 @@ class ServerGame extends Game {
             [false, false, false, false, true, false, false, false, false, false, false, false, false, false, true, false, false, false, false]
         ];
 
+        this.holes.push({'pos': [840, 840], 'radius': 85});
+        this.holes.push({'pos': [1440, 1440], 'radius': 85});
     }
 
     getNewRandomPosition() {
-        let ang = Math.random() * 2 * Math.PI;
-        let dist = Math.random() * this.mapWidth / 4 + this.mapWidth / 4;
-        return [this.mapWidth / 2 + Math.cos(ang) * dist, this.mapHeight / 2 + Math.sin(ang) * dist];
+        let ang, dist, pos, valid;
+        do {
+            ang = Math.random() * 2 * Math.PI;
+            dist = Math.random() * this.mapWidth / 4 + this.mapWidth / 4;
+            pos = [this.mapWidth / 2 + Math.cos(ang) * dist, this.mapHeight / 2 + Math.sin(ang) * dist];
+
+            valid = true;
+            for(let i = 0; i < this.holes.length; i++){
+                let hole = this.holes[i];
+                let minDist = hole.radius + 100;
+
+                if(distVectorSqr(pos, hole.pos) < minDist * minDist){
+                    valid = false;
+                    break;
+                }
+            }
+
+        } while (!valid);
+
+        return pos;
     }
 
     getNewUniqueId() {
@@ -316,6 +324,23 @@ class ServerGame extends Game {
         }
     }
 
+    checkHoles(deltaTime){
+        super.checkHoles(deltaTime);
+        for (let i = 0; i < this.holes.length; i++) {
+            let hole = this.holes[i];
+            for (let j = 0; j < this.players.length; j++) {
+                let player = this.players[j];
+                if (!player.active) continue;
+
+                let minDist = hole.radius - player.radius;
+                let distSqr = distVectorSqr(player.pos, hole.pos);
+                if(distSqr < minDist * minDist){
+                    player.takeDamage(player.lastHitBy, player.life);
+                }
+            }
+        }
+    }
+
     checkRestartVotes(deltaTime) {
         if (!this.restartVoting) return;
         this.restartVoteTimer -= deltaTime;
@@ -336,6 +361,12 @@ class ServerGame extends Game {
             if (this.matchDuration < this.resetDelay) {
                 this.resetMatch();
             }
+        }
+
+        if(this.matchDuration < this.matchMaxDuration - (60 * (1 + this.timeMultiplierCount))){
+            this.timeMultiplierCount++;
+            this.timeMultiplier += 0.2;
+            this.io.emit('timemultiplier', this.timeMultiplier);
         }
     }
 
@@ -361,7 +392,9 @@ class ServerGame extends Game {
         }
 
         for (let i = 0; i < this.players.length; i++) {
+            let socket = this.players[i].socket;
             this.players[i] = this.buildPlayer(this.players[i].data);
+            this.players[i].socket = socket;
             this.io.emit('update', this.getPlayerData(this.players[i].id));
         }
 
@@ -474,7 +507,7 @@ class ServerGame extends Game {
                 if (distVectorSqr(plr.pos, lavaPool.pos) < minDist * minDist) {
                     //plr.takeDamage(lavaPool.owner, lavaPool.damage * deltaTime);
                     plr.deltaLife -= lavaPool.damage * deltaTime;
-                    plr.lastHitBy = lavaPool.owner;
+                    if(plr.id != lavaPool.owner.id) plr.lastHitBy = lavaPool.owner;
                 }
             }
         }
@@ -706,8 +739,10 @@ class ServerGame extends Game {
             if (!this.players[i].active && this.players[i].respawn == 0) {
                 let plr = this.players[i];
                 let data = plr.data;
+                let socket = plr.socket;
                 data.points = plr.points;
                 let newPlr = this.buildPlayer(data);
+                newPlr.socket = socket;
                 this.players[i] = newPlr;
                 this.io.emit('update', this.getPlayerData(newPlr.id));
             }
@@ -1273,6 +1308,11 @@ class ServerPlayer extends Player {
 
             this.resolveDot(deltaTime);
 
+            if(this.collidedWith != null){
+                this.lastHitBy = this.collidedWith;
+                this.collidedWith = null;
+            }
+
             if (this.wasImaterial && this.imaterial == 0) {
                 this.wasImaterial = false;
                 this.game.validatePosition(this);
@@ -1433,6 +1473,7 @@ class ServerPlayer extends Player {
     }
 
     takeDamage(source, value) {
+        this.lastHitBy = source;
         this.life = maxValue(0, this.life - (value * source.damageMultiplier));
         this.messages.push({
             'type': 'update',
@@ -1544,6 +1585,7 @@ class ServerProjectile extends Projectile {
                 this.effects[i].apply(player);
             }
             this.playersHit.push(player);
+            player.lastHitBy = this.owner;
         }
         if (!this.pierces && !this.bounces) this.active = false;
     }

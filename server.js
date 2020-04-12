@@ -57,9 +57,13 @@ io.sockets.on(
 
             socket.emit('walls', game.walls);
 
+            socket.emit('holes', game.holes);
+
             socket.emit('matchduration', game.matchDuration);
 
             socket.emit('matchstate', game.inMatch);
+
+            socket.emit('timemultiplier', game.timeMultiplier);  
 
             data.id = socket.id;
             let player = game.buildPlayer(data);
@@ -170,6 +174,8 @@ function updateImportant() {
 
 function updateLessImportant(){
     io.emit('matchduration', game.matchDuration);
+
+    socket.emit('timemultiplier', game.timeMultiplier);  
 
     for(let i = 0; i < game.stars.length; i++){
         io.emit('updatestar', {'id': game.stars[i].id, 'respawn': game.stars[i].respawn});

@@ -389,6 +389,12 @@ function registerEvents() {
         }
     });
 
+    socket.on('holes', function (data) {
+        if (inGame) {
+            game.holes = data;
+        }
+    });
+
     socket.on('updatestar', function (data) {
         if (inGame) {
             for (let i = 0; i < game.stars.length; i++) {
@@ -448,6 +454,10 @@ function registerEvents() {
 
     socket.on('matchduration', function (data) {
         if (inGame) game.matchDuration = data;
+    });
+
+    socket.on('timemultiplier', function(data){
+        if (inGame) game.timeMultiplier = data;
     });
 
 }

@@ -49,7 +49,7 @@ class SlowEffect extends Effect {
     constructor(value, duration){
         super();
         this.value = value;
-        this.duration = duration
+        this.duration = duration;
     }
 
     apply(player){
