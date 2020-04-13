@@ -232,17 +232,17 @@ class Game {
         }
     }
 
-    checkHoles(deltaTime){
-        for(let i = 0; i < this.holes.length; i++){
+    checkHoles(deltaTime) {
+        for (let i = 0; i < this.holes.length; i++) {
             let hole = this.holes[i];
-            for(let j = 0; j < this.players.length; j++){
+            for (let j = 0; j < this.players.length; j++) {
                 let player = this.players[j];
-                if(!player.active) continue;
+                if (!player.active) continue;
 
                 let minDistSqr = player.radius + hole.radius;
                 minDistSqr *= minDistSqr;
                 let distSqr = distVectorSqr(player.pos, hole.pos);
-                if(distSqr < minDistSqr){
+                if (distSqr < minDistSqr) {
                     let pullSpeed = mapValue(distSqr, minDistSqr, 0, 0, 300);
                     let pullDir = subVector(hole.pos, player.pos);
                     pullDir = normalizeVector(pullDir);
@@ -353,6 +353,9 @@ class Game {
                                 break;
                             case 11: //lava pool
                                 coldown = 11;
+                                break;
+                            case 12: //lava pool
+                                coldown = 7.5;
                                 break;
                             default:
                                 break;

@@ -23,7 +23,7 @@ var weapon = 0;
 var displayedFps = 0;
 
 function preload() {
-    for (let i = 0; i < 12; i++) {
+    for (let i = 0; i < 13; i++) {
         skillsInfo[i] = {
             'image': loadImage('./images/skill' + i + '.png'),
             'description': getSkillDescription(i)
@@ -135,6 +135,9 @@ function getSkillDescription(skill) {
         case 11:
             result = 'Cria uma poça de lava na posição do cursor que causa dano em quem está nela';
             break;
+        case 12:
+            result = 'Lança um projetil que explode na posição do cursor e empurra todos os jogadores próximos para longe do local da explosão';
+            break;
         default:
             break;
     }
@@ -207,7 +210,7 @@ function buildForm() {
     for (let i = 0; i < 3; i++) {
         let skillsDiv = document.getElementById('skillImages' + i);
         let skillInfo = document.getElementById('skillInfo' + i);
-        for (let j = 0; j < 12; j++) {
+        for (let j = 0; j < 13; j++) {
             let skill = new Image();
             skill.src = './images/skill' + j + '.png';
             skill.style.margin = 4;
@@ -326,6 +329,10 @@ function registerEvents() {
 
     socket.on('newexplosion', function(data){
         if(inGame) game.animations.push(new ExplosionAnimation(data));
+    });
+
+    socket.on('newrevexplosion', function(data){
+        if(inGame) game.animations.push(new RevExplosionAnimation(data));
     });
 
     socket.on('removeplayer', function (data) {

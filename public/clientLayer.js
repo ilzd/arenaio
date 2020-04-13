@@ -807,7 +807,7 @@ class Animation {
 class ExplosionAnimation extends Animation {
     constructor(data) {
         super();
-        this.maxDuration = 0.3;
+        this.maxDuration = 0.15;
         this.duration = this.maxDuration;
         this.radius = data.radius;
         this.pos = data.pos;
@@ -820,5 +820,28 @@ class ExplosionAnimation extends Animation {
         strokeWeight(3);
         let dia = map(this.duration, 0, this.maxDuration, 0, this.radius * 2);
         ellipse(this.pos[0], this.pos[1], dia, dia);
+        strokeWeight(1);
+        ellipse(this.pos[0], this.pos[1], this.radius * 2, this.radius * 2);
+    }
+}
+
+class RevExplosionAnimation extends Animation {
+    constructor(data) {
+        super();
+        this.maxDuration = 1;
+        this.duration = this.maxDuration;
+        this.radius = data.radius;
+        this.pos = data.pos;
+        this.color = data.color;
+    }
+
+    display() {
+        noFill();
+        stroke(this.color);
+        strokeWeight(3);
+        let dia = map(this.duration, 0, this.maxDuration, this.radius * 2, 0);
+        ellipse(this.pos[0], this.pos[1], dia, dia);
+        strokeWeight(1);
+        ellipse(this.pos[0], this.pos[1], this.radius * 2, this.radius * 2);
     }
 }

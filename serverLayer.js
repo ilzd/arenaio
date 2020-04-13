@@ -33,6 +33,7 @@ const WaitEffect = effects.WaitEffect;
 const ProjPush = effects.ProjPush;
 const ProjPull = effects.ProjPull;
 const DistProjDamage = effects.DistProjDamage;
+const AreaPush = effects.AreaPush;
 
 
 class ServerGame extends Game {
@@ -723,7 +724,10 @@ class ServerGame extends Game {
 
     cleanInactiveObjects() {
         for (let i = this.projectiles.length - 1; i >= 0; i--) {
-            if (!this.projectiles[i].active) this.removeProjectile(this.projectiles[i].id);
+            if (!this.projectiles[i].active) {
+                if(this.inMatch && this.projectiles[i].onDeath != null) this.projectiles[i].onDeath.apply(); 
+                this.removeProjectile(this.projectiles[i].id);
+            }
         }
 
         for (let i = this.stars.length - 1; i >= 0; i--) {
@@ -1000,7 +1004,7 @@ class ServerGame extends Game {
                                         'pos': proj.pos,
                                         'radius': proj.radius + consts.SKILL_EXPLODEARROW_RADIUS,
                                         'color': proj.color
-                                    })
+                                    });
 
                                     for (let j = 0; j < this.players.length; j++) {
                                         let plr = this.players[j];
@@ -1026,6 +1030,27 @@ class ServerGame extends Game {
                             let lavaPool = this.buildLavaPool(player, lavaData);
                             this.addLavaPool(lavaPool);
                             break;
+                            case 12:
+                                projData = {
+                                    'id': this.getNewUniqueId(),
+                                    'color': [255, 127, 127],
+                                    'speed': 800,
+                                    'maxRange': minValue(600, player.mouseDist) - player.radius,
+                                    'radius': 30,
+                                    'pierces': true,
+                                    'collidesWithWall': false,
+                                    'type': 1,
+                                    'pos': [player.pos[0] + player.aimDir[0] * player.radius, player.pos[1] + player.aimDir[1] * player.radius],
+                                    'dir': [player.aimDir[0], player.aimDir[1]],
+                                }
+                                proj = this.buildProjectile(player.id, projData);
+    
+                                proj.onDeath = new AreaPush(proj, this.players, 350, 1300, this.io);
+    
+                                this.addProjectile(proj);
+                                this.io.emit('newprojectile', projData);
+                                break;
+                                break;
                         default:
                             break;
                     }
@@ -1579,6 +1604,7 @@ class ServerProjectile extends Projectile {
         this.bounces = false;
         this.playersHit = [];
         this.shootsBack = false;
+        this.onDeath = null;
     }
 
     hit(player) {
