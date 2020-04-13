@@ -162,18 +162,21 @@ class ServerGame extends Game {
                     'forcedDir': plr.forcedDir,
                     'forced': plr.forced,
                     'speed': plr.speed,
+                    'speedMultiplier': plr.speedMultiplier,
                     'forcedSpeed': plr.forcedSpeed,
                     'color': plr.color,
                     'nickname': plr.nickname,
                     'latency': plr.latency,
                     'aimDir': plr.aimDir,
                     'attackSpeed': plr.attackSpeed,
+                    'attackSpeedMultiplier': plr.attackSpeedMultiplier,
                     'isAttacking': plr.isAttacking,
                     'attackDelay': plr.attackDelay,
                     'build': plr.build,
                     'activesInfo': plr.activesInfo,
                     'points': plr.points,
                     'maxLife': plr.maxLife,
+                    'maxLifeMultiplier': plr.maxLifeMultiplier,
                     'life': plr.life,
                     'slow': plr.slow,
                     'fast': plr.fast,
@@ -184,6 +187,7 @@ class ServerGame extends Game {
                     'imaterial': plr.imaterial,
                     'areaHealing': plr.areaHealing,
                     'lifeRegen': plr.lifeRegen,
+                    'lifeRegenMultiplier': plr.lifeRegenMultiplier,
                     'repulses': plr.repulses,
                     'areaDamage': plr.areaDamage,
                     'posToValidate': plr.posToValidate
@@ -440,21 +444,21 @@ class ServerGame extends Game {
                 if (distVectorSqr(plr.pos, relic.pos) < minDist * minDist) {
                     switch (relic.type) {
                         case 0:
-                            plr.maxLife += 7.5;
-                            plr.life += 7.5;
+                            plr.maxLifeMultiplier += 0.05;
+                            plr.life += plr.maxLife * 0.05;
                             this.io.emit('update', {
                                 'id': plr.id,
                                 'life': plr.life,
-                                'maxLife': plr.maxLife
+                                'maxLifeMultiplier': plr.maxLifeMultiplier
                             });
 
                             this.announce(plr.nickname + ' coletou uma relíquia e teve sua vida máxima aumentada');
                             break;
                         case 1:
-                            plr.speed += 20;
+                            plr.speedMultiplier += 0.05;
                             this.io.emit('update', {
                                 'id': plr.id,
-                                'speed': plr.speed
+                                'speedMultiplier': plr.speedMultiplier
                             });
 
                             this.announce(plr.nickname + ' coletou uma relíquia e teve sua velocidade de movimento aumentada');
@@ -464,18 +468,18 @@ class ServerGame extends Game {
                             this.announce(plr.nickname + ' coletou uma relíquia e agora causa mais dano');
                             break;
                         case 3:
-                            plr.lifeRegen += 0.4;
+                            plr.lifeRegenMultiplier += 0.05;
                             this.io.emit('update', {
                                 'id': plr.id,
-                                'lifeRegen': plr.lifeRegen
+                                'lifeRegeMultiplier': plr.lifeRegeMultiplier
                             });
                             this.announce(plr.nickname + ' coletou uma relíquia e agora regenera vida mais rapidamente');
                             break;
                         case 4:
-                            plr.attackSpeed += 0.1;
+                            plr.attackSpeedMultiplier += 0.05;
                             this.io.emit('update', {
                                 'id': plr.id,
-                                'attackSpeed': plr.attackSpeed
+                                'attackSpeedMultiplier': plr.attackSpeedMultiplier
                             });
                             this.announce(plr.nickname + ' coletou uma relíquia e agora recarrega seu arco mais rapidamente');
                             break;
@@ -745,12 +749,22 @@ class ServerGame extends Game {
         for (let i = this.players.length - 1; i >= 0; i--) {
             if (!this.players[i].active && this.players[i].respawn == 0) {
                 let plr = this.players[i];
+
                 let data = plr.data;
                 let socket = plr.socket;
                 data.points = plr.points;
                 let newPlr = this.buildPlayer(data);
+
                 newPlr.socket = socket;
+                newPlr.speedMultiplier = plr.speedMultiplier;
+                newPlr.attackSpeedMultiplier = plr.attackSpeedMultiplier;
+                newPlr.maxLifeMultiplier = plr.maxLifeMultiplier;
+                newPlr.lifeRegenMultiplier = plr.lifeRegenMultiplier;
+                newPlr.damageMultiplier = plr.damageMultiplier;
+                newPlr.life = newPlr.maxLife * newPlr.maxLifeMultiplier;
+
                 this.players[i] = newPlr;
+
                 this.io.emit('update', this.getPlayerData(newPlr.id));
             }
         }
@@ -1126,17 +1140,17 @@ class ServerGame extends Game {
 
         //if has life regen passive
         if (this.hasPassive(1, data.build.passives)) {
-            player.lifeRegen = player.lifeRegen * 2;
+            player.lifeRegenMultiplier += 1;
         }
 
         //if has mobility passive
         if (this.hasPassive(2, data.build.passives)) {
-            player.speed = player.speed * 1.2;
+            player.speedMultiplier += 0.2;
         }
 
         //if has agility passive
         if (this.hasPassive(3, data.build.passives)) {
-            player.attackSpeed *= 1.2;
+            player.attackSpeedMultiplier += 0.2;
         }
 
         //if has repulsion passive
@@ -1151,8 +1165,8 @@ class ServerGame extends Game {
 
         //if has increased max life
         if (this.hasPassive(6, data.build.passives)) {
-            player.maxLife = player.maxLife * 1.3;
-            player.life = player.maxLife;
+            player.maxLifeMultiplier += 0.2;
+            player.life = player.maxLife * player.maxLifeMultiplier;
         }
 
         //if has increased damage
@@ -1301,8 +1315,8 @@ class ServerPlayer extends Player {
 
         if (this.attackIntent) {
             if (this.attackDelay == 0) {
-                if (this.takesSlowOnRecharge) this.addSlowEffect(0.35, 1 / this.attackSpeed);
-                this.attackDelay = 1 / this.attackSpeed;
+                if (this.takesSlowOnRecharge) this.addSlowEffect(0.35, 1 / (this.attackSpeed * this.attackSpeedMultiplier));
+                this.attackDelay = 1 / (this.attackSpeed * this.attackSpeedMultiplier);
                 this.attacked = true;
                 this.messages.push({
                     'type': 'update',
@@ -1526,12 +1540,23 @@ class ServerPlayer extends Player {
                     'data': { 'id': source.id, 'points': source.points }
                 });
                 this.game.announce(source.nickname + ' eliminou ' + this.nickname);
+
+                if(this.game.hasPassive(9, source.build.passives)){
+                    source.speedMultiplier += 0.035;
+                    source.attackSpeedMultiplier += 0.035;
+                    this.messages.push({
+                        'type': 'update',
+                        'data': { 'id': source.id, 
+                        'speedMultiplier': source.speedMultiplier, 
+                        'attackSpeedMultiplier':source.attackSpeedMultiplier }
+                    });
+                }
             }
         }
     }
 
     heal(amount) {
-        this.life = minValue(this.maxLife, this.life + amount);
+        this.life = minValue(this.maxLife * this.maxLifeMultiplier, this.life + amount);
         this.messages.push({
             'type': 'update',
             'data': { 'id': this.id, 'life': this.life }

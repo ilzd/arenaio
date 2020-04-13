@@ -232,11 +232,11 @@ class ClientGame extends Game {
         noStroke();
 
         fill(255);
-        let ang = map(this.camReference.prevLife, 0, this.camReference.maxLife, PI, 0);
+        let ang = map(this.camReference.prevLife, 0, this.camReference.maxLife * this.camReference.maxLifeMultiplier, PI, 0);
         arc(LIFE_GLOBE_X, LIFE_GLOBE_Y, 190, 190, -HALF_PI + ang, -HALF_PI - ang, OPEN);
 
         fill(255, 0, 0);
-        ang = map(this.camReference.life, 0, this.camReference.maxLife, PI, 0);
+        ang = map(this.camReference.life, 0, this.camReference.maxLife * this.camReference.maxLifeMultiplier, PI, 0);
         arc(LIFE_GLOBE_X, LIFE_GLOBE_Y, 190, 190, -HALF_PI + ang, -HALF_PI - ang, OPEN);
 
         stroke(0);
@@ -248,7 +248,7 @@ class ClientGame extends Game {
         textSize(24);
         push();
         textAlign(CENTER, CENTER);
-        text(Math.round(this.camReference.life) + ' / ' + Math.round(this.camReference.maxLife), LIFE_GLOBE_X, LIFE_GLOBE_Y);
+        text(Math.round(this.camReference.life) + ' / ' + Math.round(this.camReference.maxLife * this.camReference.maxLifeMultiplier), LIFE_GLOBE_X, LIFE_GLOBE_Y);
         pop();
 
         if (!this.camReference.active) {
@@ -590,16 +590,16 @@ class ClientPlayer extends Player {
         fill(0);
         rect(this.pos[0] - this.radius, this.pos[1] + this.radius * 1.1, this.radius * 2, this.radius * 0.35);
         fill(255, 255, 255);
-        rect(this.pos[0] - this.radius, this.pos[1] + this.radius * 1.1, map(this.prevLife, 0, this.maxLife, 0, this.radius * 2), this.radius * 0.35);
+        rect(this.pos[0] - this.radius, this.pos[1] + this.radius * 1.1, map(this.prevLife, 0, this.maxLife * this.maxLifeMultiplier, 0, this.radius * 2), this.radius * 0.35);
         fill(255, 0, 0);
-        rect(this.pos[0] - this.radius, this.pos[1] + this.radius * 1.1, map(this.life, 0, this.maxLife, 0, this.radius * 2), this.radius * 0.35);
+        rect(this.pos[0] - this.radius, this.pos[1] + this.radius * 1.1, map(this.life, 0, this.maxLife * this.maxLifeMultiplier, 0, this.radius * 2), this.radius * 0.35);
 
         noFill();
         strokeWeight(5);
         stroke(this.bow.color);
-        let bowW = this.radius * mapValue(this.attackDelay, 0, 1 / this.attackSpeed, this.bow.width, this.bow.width * 0.75);
-        let bowH = this.radius * mapValue(this.attackDelay, 0, 1 / this.attackSpeed, this.bow.height * 0.85, this.bow.height);
-        let lineX = mapValue(this.attackDelay, 0, 1 / this.attackSpeed, 0, this.radius);
+        let bowW = this.radius * mapValue(this.attackDelay, 0, 1 / (this.attackSpeed * this.attackSpeedMultiplier), this.bow.width, this.bow.width * 0.75);
+        let bowH = this.radius * mapValue(this.attackDelay, 0, 1 / (this.attackSpeed * this.attackSpeedMultiplier), this.bow.height * 0.85, this.bow.height);
+        let lineX = mapValue(this.attackDelay, 0, 1 / (this.attackSpeed * this.attackSpeedMultiplier), 0, this.radius);
 
         push();
         translate(this.pos[0], this.pos[1]);
@@ -614,7 +614,6 @@ class ClientPlayer extends Player {
 
     attack(deltaTime) {
         super.attack(deltaTime);
-        //if (this.attackDelay == 1 / this.attackSpeed) this.attackDelay = 0;
     }
 
     update(deltaTime) {

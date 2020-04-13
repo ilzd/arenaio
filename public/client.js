@@ -29,7 +29,7 @@ function preload() {
             'description': getSkillDescription(i)
         };
     }
-    for (let i = 0; i < 9; i++) {
+    for (let i = 0; i < 10; i++) {
         passivesInfo[i] = {
             'image': loadImage('./images/passive' + i + '.png'),
             'description': getPassiveDescription(i)
@@ -175,6 +175,9 @@ function getPassiveDescription(passive) {
         case 8:
             result = 'O tempo de recarga de suas habilidades é significativamente menor';
             break;
+        case 9:
+            result = 'Sempre que eliminar um adversário, suas velocidades de recarga e movimento aumentam';
+            break;
         default:
             break;
     }
@@ -246,7 +249,7 @@ function buildForm() {
     for (let i = 0; i < 3; i++) {
         let passiveDiv = document.getElementById('passiveImages' + i);
         let passiveInfo = document.getElementById('passiveInfo' + i);
-        for (let j = 0; j < 9; j++) {
+        for (let j = 0; j < 10; j++) {
             let passive = new Image();
             passive.src = './images/passive' + j + '.png';
             passive.style.margin = 4;

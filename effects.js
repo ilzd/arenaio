@@ -160,11 +160,6 @@ class AreaPush extends Effect {
     }
 }
 
-// function mapValue(val, min, max, minR, maxR){
-//     let n1 = val - min, n2 = max - min;
-//     return minR + (maxR - minR) * (n1 / n2);
-// }
-
 module.exports = {
     DamageEffect,
     ProjDamage,

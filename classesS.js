@@ -25,6 +25,7 @@ class Player extends GameObject {
         this.dir = [0, 0]; //move direction
         this.forcedDir = [0, 0];
         this.speed = 400; //move speed
+        this.speedMultiplier = 1;
         this.forcedSpeed = 0;
         this.slow = 1;
         this.fast = 1;
@@ -34,6 +35,7 @@ class Player extends GameObject {
         this.latency = 0; //player latency
         this.aimDir = [1, 0];
         this.attackSpeed = 1.5;
+        this.attackSpeedMultiplier = 1;
         this.attackDelay = 0;
         this.posToValidate = true;
         this.build = {
@@ -44,6 +46,7 @@ class Player extends GameObject {
         this.activesInfo = [];
         this.points = 0;
         this.maxLife = 150;
+        this.maxLifeMultiplier = 1;
         this.life = this.maxLife;
         this.stunned = 0;
         this.silenced = 0;
@@ -52,6 +55,7 @@ class Player extends GameObject {
         this.imaterial = 0;
         this.areaHealing = 0;
         this.lifeRegen = 3;
+        this.lifeRegenMultiplier = 1;
         this.repulses = false;
         this.areaDamage = false;
         this.collidedWith = null;
@@ -80,7 +84,7 @@ class Player extends GameObject {
             finalSpeed = this.forcedSpeed;
         } else if (!this.stunned) {
             finalDir = this.dir;
-            finalSpeed = this.speed;
+            finalSpeed = this.speed * this.speedMultiplier;
             finalSlow = this.slow;
             finalFast = this.fast;
         } else {
@@ -108,7 +112,7 @@ class Player extends GameObject {
     }
 
     regen(deltaTime) {
-        this.life = minValue(this.maxLife, this.life + this.lifeRegen * deltaTime);
+        this.life = minValue(this.maxLife * this.maxLifeMultiplier, this.life + this.lifeRegen * this.lifeRegenMultiplier * deltaTime);
     }
 
     updateEffects(deltaTime) {
