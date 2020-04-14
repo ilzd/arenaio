@@ -593,6 +593,21 @@ class ClientPlayer extends Player {
         rect(this.pos[0] - this.radius, this.pos[1] + this.radius * 1.1, map(this.prevLife, 0, this.maxLife * this.maxLifeMultiplier, 0, this.radius * 2), this.radius * 0.35);
         fill(255, 0, 0);
         rect(this.pos[0] - this.radius, this.pos[1] + this.radius * 1.1, map(this.life, 0, this.maxLife * this.maxLifeMultiplier, 0, this.radius * 2), this.radius * 0.35);
+        
+        stroke(255);
+        strokeWeight(1);
+        let lifeIndicator = 50;
+        while (lifeIndicator < this.maxLife * this.maxLifeMultiplier) {
+            let xPos = this.pos[0] - this.radius + map(lifeIndicator, 0, this.maxLife * this.maxLifeMultiplier, 0, this.radius * 2)
+            line(xPos,
+                this.pos[1] + this.radius * 1.15,
+                xPos,
+                this.pos[1] + this.radius * 1.35);
+            
+                lifeIndicator += 50;
+        }
+
+        this.drawEffects();
 
         noFill();
         strokeWeight(5);
@@ -610,6 +625,33 @@ class ClientPlayer extends Player {
         line(this.radius, -bowH / 2, lineX, 0);
         line(this.radius, bowH / 2, lineX, 0);
         pop();
+    }
+
+    drawEffects(){
+        let effectCount = 0;
+        let iconSize = this.radius / 3;
+        stroke(0);
+        strokeWeight(1);
+        if(this.slow < 1){
+            fill(153, 190, 255);
+            rect(this.pos[0] - this.radius + (iconSize * effectCount), this.pos[1] + this.radius * 1.5, iconSize, iconSize);
+            effectCount++;
+        }
+        if(this.fast > 1){
+            fill(50, 255, 50);
+            rect(this.pos[0] - this.radius + (iconSize * effectCount), this.pos[1] + this.radius * 1.5, iconSize, iconSize);
+            effectCount++;
+        }
+        if(this.stunned > 0){
+            fill(0);
+            rect(this.pos[0] - this.radius + (iconSize * effectCount), this.pos[1] + this.radius * 1.5, iconSize, iconSize);
+            effectCount++;
+        }
+        if(this.silenced > 0){
+            fill(255);
+            rect(this.pos[0] - this.radius + (iconSize * effectCount), this.pos[1] + this.radius * 1.5, iconSize, iconSize);
+            effectCount++;
+        }
     }
 
     attack(deltaTime) {
@@ -827,7 +869,7 @@ class ExplosionAnimation extends Animation {
 class RevExplosionAnimation extends Animation {
     constructor(data) {
         super();
-        this.maxDuration = 1;
+        this.maxDuration = 0.15;
         this.duration = this.maxDuration;
         this.radius = data.radius;
         this.pos = data.pos;
