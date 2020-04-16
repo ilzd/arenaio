@@ -155,8 +155,21 @@ class AreaPush extends Effect {
                 let duration = (this.radius - dist + plr.radius) / this.speed;
                 plr.takeSilence(duration);
                 plr.takeForce([pushDir[0], pushDir[1]], this.speed, duration);
+                plr.lastHitBy = this.proj.owner;
             }
         }
+    }
+}
+
+class PinProj extends Effect {
+    constructor(proj, duration){
+        super();
+        this.proj = proj;
+        this.duration = duration;
+    }
+
+    apply(player){
+        player.getPinned([player.pos[0], player.pos[1]], this.duration);
     }
 }
 
@@ -171,4 +184,5 @@ module.exports = {
     ProjPull,
     DistProjDamage,
     AreaPush,
+    PinProj,
 }

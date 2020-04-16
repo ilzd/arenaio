@@ -23,7 +23,7 @@ var weapon = 0;
 var displayedFps = 0;
 
 function preload() {
-    for (let i = 0; i < 13; i++) {
+    for (let i = 0; i < 15; i++) {
         skillsInfo[i] = {
             'image': loadImage('./images/skill' + i + '.png'),
             'description': getSkillDescription(i)
@@ -54,6 +54,8 @@ function setup() {
     frameRate(999);
 
     noSmooth();
+
+    strokeCap(SQUARE);
 
     document.onkeydown = function (event) {
         if (event.key == "Tab") {
@@ -115,7 +117,7 @@ function getSkillDescription(skill) {
             result = 'Te torna invisível por um curto período de tempo';
             break;
         case 5:
-            result = 'Te torna imaterial por um curto período de tempo, ignorando todos os tipos de colisão';
+            result = 'Te torna imaterial por um curto período de tempo, ignorando colisões';
             break;
         case 6:
             result = 'Dispara projéteis a sua frente que empurram os inimigos que forem atingidos';
@@ -136,7 +138,13 @@ function getSkillDescription(skill) {
             result = 'Cria uma poça de lava na posição do cursor que causa dano em quem está nela';
             break;
         case 12:
-            result = 'Lança um projetil que explode na posição do cursor e empurra todos os jogadores próximos para longe do local da explosão';
+            result = 'Lança um projétil que explode na posição do cursor e empurra todos os jogadores próximos para longe do local da explosão';
+            break;
+        case 13:
+            result = 'Lança um projétil que deixa o alvo preso no chão. O alvo é atordorado caso se afaste muito do local onde foi atingido';
+            break;
+        case 14:
+            result = 'Repete o efeito da última skill utilizada, mais seu tempo de recarga será consideravelmente maior';
             break;
         default:
             break;
@@ -213,7 +221,7 @@ function buildForm() {
     for (let i = 0; i < 3; i++) {
         let skillsDiv = document.getElementById('skillImages' + i);
         let skillInfo = document.getElementById('skillInfo' + i);
-        for (let j = 0; j < 13; j++) {
+        for (let j = 0; j < 15; j++) {
             let skill = new Image();
             skill.src = './images/skill' + j + '.png';
             skill.style.margin = 4;

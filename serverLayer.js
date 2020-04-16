@@ -34,6 +34,7 @@ const ProjPush = effects.ProjPush;
 const ProjPull = effects.ProjPull;
 const DistProjDamage = effects.DistProjDamage;
 const AreaPush = effects.AreaPush;
+const PinProj = effects.PinProj;
 
 
 class ServerGame extends Game {
@@ -117,8 +118,8 @@ class ServerGame extends Game {
             [false, false, false, false, true, false, false, false, false, false, false, false, false, false, true, false, false, false, false]
         ];
 
-        this.holes.push({'pos': [840, 840], 'radius': 85});
-        this.holes.push({'pos': [1440, 1440], 'radius': 85});
+        this.holes.push({ 'pos': [840, 840], 'radius': 85 });
+        this.holes.push({ 'pos': [1440, 1440], 'radius': 85 });
     }
 
     getNewRandomPosition() {
@@ -129,11 +130,11 @@ class ServerGame extends Game {
             pos = [this.mapWidth / 2 + Math.cos(ang) * dist, this.mapHeight / 2 + Math.sin(ang) * dist];
 
             valid = true;
-            for(let i = 0; i < this.holes.length; i++){
+            for (let i = 0; i < this.holes.length; i++) {
                 let hole = this.holes[i];
                 let minDist = hole.radius + 100;
 
-                if(distVectorSqr(pos, hole.pos) < minDist * minDist){
+                if (distVectorSqr(pos, hole.pos) < minDist * minDist) {
                     valid = false;
                     break;
                 }
@@ -190,7 +191,10 @@ class ServerGame extends Game {
                     'lifeRegenMultiplier': plr.lifeRegenMultiplier,
                     'repulses': plr.repulses,
                     'areaDamage': plr.areaDamage,
-                    'posToValidate': plr.posToValidate
+                    'posToValidate': plr.posToValidate,
+                    'pinned': plr.pinned,
+                    'pinPos': plr.pinPos,
+                    'pinRadius': plr.pinRadius
                 }
             }
         }
@@ -329,7 +333,7 @@ class ServerGame extends Game {
         }
     }
 
-    checkHoles(deltaTime){
+    checkHoles(deltaTime) {
         super.checkHoles(deltaTime);
         for (let i = 0; i < this.holes.length; i++) {
             let hole = this.holes[i];
@@ -339,7 +343,7 @@ class ServerGame extends Game {
 
                 let minDist = hole.radius - player.radius;
                 let distSqr = distVectorSqr(player.pos, hole.pos);
-                if(distSqr < minDist * minDist){
+                if (distSqr < minDist * minDist) {
                     player.takeDamage(player.lastHitBy, player.life);
                 }
             }
@@ -368,7 +372,7 @@ class ServerGame extends Game {
             }
         }
 
-        if(this.matchDuration < this.matchMaxDuration - (60 * (1 + this.timeMultiplierCount))){
+        if (this.matchDuration < this.matchMaxDuration - (60 * (1 + this.timeMultiplierCount))) {
             this.timeMultiplierCount++;
             this.timeMultiplier += 0.2;
             this.io.emit('timemultiplier', this.timeMultiplier);
@@ -515,7 +519,7 @@ class ServerGame extends Game {
                 if (distVectorSqr(plr.pos, lavaPool.pos) < minDist * minDist) {
                     //plr.takeDamage(lavaPool.owner, lavaPool.damage * deltaTime);
                     plr.deltaLife -= lavaPool.damage * deltaTime;
-                    if(plr.id != lavaPool.owner.id) plr.lastHitBy = lavaPool.owner;
+                    if (plr.id != lavaPool.owner.id) plr.lastHitBy = lavaPool.owner;
                 }
             }
         }
@@ -729,7 +733,7 @@ class ServerGame extends Game {
     cleanInactiveObjects() {
         for (let i = this.projectiles.length - 1; i >= 0; i--) {
             if (!this.projectiles[i].active) {
-                if(this.inMatch && this.projectiles[i].onDeath != null) this.projectiles[i].onDeath.apply(); 
+                if (this.inMatch && this.projectiles[i].onDeath != null) this.projectiles[i].onDeath.apply();
                 this.removeProjectile(this.projectiles[i].id);
             }
         }
@@ -910,168 +914,196 @@ class ServerGame extends Game {
                 if (player.silenced > 0 || !player.active || !this.inMatch) return;
 
                 if (player.activesInfo[skill].coldown == 0) {
-                    let projData, proj;
-                    player.activesInfo[skill].coldown = player.activesInfo[skill].maxColdown;
-                    this.io.emit('update', { 'id': player.id, 'activesInfo': player.activesInfo });
-                    switch (player.activesInfo[skill].skill) {
-                        case 0:
-                            let flashDist = minValue(280, player.mouseDist);
-                            player.pos = [player.pos[0] + player.aimDir[0] * flashDist, player.pos[1] + player.aimDir[1] * flashDist];
-                            player.posToValidate = true;
-                            this.io.emit('update', { 'id': player.id, 'pos': player.pos, 'posToValidate': player.posToValidate });
-                            break;
-                        case 1:
-                            player.addSlowEffect(0.2, 0.3);
-                            let wait = new WaitEffect(new FastEffect(2, 1.3), 0.3);
-                            player.waitEffects.push(wait);
-                            break;
-                        case 2:
-                            projData = {
-                                'id': this.getNewUniqueId(),
-                                'color': [0, 0, 0],
-                                'speed': 500,
-                                'maxRange': 750,
-                                'radius': 80,
-                                'type': 1,
-                                'collidesWithWall': false,
-                                'pos': [player.pos[0] + player.aimDir[0] * player.radius, player.pos[1] + player.aimDir[1] * player.radius],
-                                'dir': [player.aimDir[0], player.aimDir[1]],
-                            }
-                            proj = this.buildProjectile(player.id, projData);
 
-                            proj.effects.push(new StunEffect(1.4));
-
-                            this.addProjectile(proj);
-                            this.io.emit('newprojectile', projData);
-                            break;
-                        case 3:
-                            player.reflecting += consts.SKILL_ZITORSHIELD_DURATION;
-                            this.io.emit('update', { 'id': player.id, 'reflecting': player.reflecting });
-                            break;
-                        case 4:
-                            player.becomeInvisible(2.5);
-                            break;
-                        case 5:
-                            player.imaterial = 1.5;
-                            player.wasImaterial = true;
-
-                            this.io.emit('update', { 'id': player.id, 'imaterial': player.imaterial });
-                            break;
-                        case 6:
-                            let amount = 7;
-                            for (let i = 0; i < amount; i++) {
-                                let aimAngle = angleFromX(player.aimDir);
-                                let projAngle = aimAngle + mapValue(i, 0, amount - 1, -Math.PI / 5, Math.PI / 5);
-                                let projDir = [Math.cos(projAngle), -Math.sin(projAngle)];
-                                projData = {
-                                    'id': this.getNewUniqueId(),
-                                    'color': [127, 255, 127],
-                                    'speed': 800,
-                                    'maxRange': 450,
-                                    'radius': 8,
-                                    'type': 1,
-                                    'pos': [player.pos[0] + player.aimDir[0] * player.radius, player.pos[1] + player.aimDir[1] * player.radius],
-                                    'dir': projDir,
-                                }
-                                proj = this.buildProjectile(player.id, projData);
-
-                                proj.effects.push(new ProjPush(proj, 2000, 0.2));
-
-                                this.addProjectile(proj);
-                                this.io.emit('newprojectile', projData);
-                            }
-                            break;
-                        case 7:
-                            projData = {
-                                'id': this.getNewUniqueId(),
-                                'color': [0, 127, 127],
-                                'speed': 1400,
-                                'maxRange': 600,
-                                'radius': 20,
-                                'type': 1,
-                                'pos': [player.pos[0] + player.aimDir[0] * player.radius, player.pos[1] + player.aimDir[1] * player.radius],
-                                'dir': [player.aimDir[0], player.aimDir[1]],
-                            }
-                            proj = this.buildProjectile(player.id, projData);
-
-                            proj.effects.push(new ProjPull(proj, 1500));
-
-                            this.addProjectile(proj);
-                            this.io.emit('newprojectile', projData);
-                            break;
-                        case 8:
-                            player.startAreaHealing(consts.SKILL_HEALAREA_DURATION);
-                            break;
-                        case 9:
-                            let dashDistance = minValue(500, player.mouseDist);
-                            let dashSpeed = 3000;
-                            player.takeForce(player.aimDir, dashSpeed, dashDistance / dashSpeed);
-                            break;
-                        case 10:
-                            for (let i = 0; i < this.projectiles.length; i++) {
-                                proj = this.projectiles[i];
-                                if (proj.owner.id == player.id) {
-                                    proj.active = false;
-                                    proj.playersHit = [];
-
-                                    this.io.emit('newexplosion', {
-                                        'pos': proj.pos,
-                                        'radius': proj.radius + consts.SKILL_EXPLODEARROW_RADIUS,
-                                        'color': proj.color
-                                    });
-
-                                    for (let j = 0; j < this.players.length; j++) {
-                                        let plr = this.players[j];
-                                        if (plr.active && plr.id != proj.owner.id) {
-                                            let minDist = plr.radius + proj.radius + consts.SKILL_EXPLODEARROW_RADIUS;
-                                            if (distVectorSqr(plr.pos, proj.pos) < minDist * minDist) {
-                                                proj.hit(plr);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            break;
-                        case 11:
-                            let lavaDist = minValue(500, player.mouseDist);
-                            let lavaData = {
-                                'id': this.getNewUniqueId(),
-                                'duration': 3,
-                                'damage': 50,
-                                'radius': 100,
-                                'pos': [player.pos[0] + player.aimDir[0] * lavaDist, player.pos[1] + player.aimDir[1] * lavaDist]
-                            }
-                            let lavaPool = this.buildLavaPool(player, lavaData);
-                            this.addLavaPool(lavaPool);
-                            break;
-                            case 12:
-                                projData = {
-                                    'id': this.getNewUniqueId(),
-                                    'color': [255, 127, 127],
-                                    'speed': 800,
-                                    'maxRange': minValue(600, player.mouseDist) - player.radius,
-                                    'radius': 30,
-                                    'pierces': true,
-                                    'collidesWithWall': false,
-                                    'type': 1,
-                                    'pos': [player.pos[0] + player.aimDir[0] * player.radius, player.pos[1] + player.aimDir[1] * player.radius],
-                                    'dir': [player.aimDir[0], player.aimDir[1]],
-                                }
-                                proj = this.buildProjectile(player.id, projData);
-    
-                                proj.onDeath = new AreaPush(proj, this.players, 350, 1300, this.io);
-    
-                                this.addProjectile(proj);
-                                this.io.emit('newprojectile', projData);
-                                break;
-                                break;
-                        default:
-                            break;
+                    if (player.activesInfo[skill].skill != 14) { //not copy skill
+                        player.lastSkillUsed = skill;
+                        player.activesInfo[skill].coldown = player.activesInfo[skill].maxColdown;
+                        this.playSkill(player, player.activesInfo[skill].skill);
+                    } else if(player.lastSkillUsed != null)  {
+                        player.activesInfo[skill].coldown = player.activesInfo[player.lastSkillUsed].maxColdown * 1.75;
+                        this.playSkill(player, player.activesInfo[player.lastSkillUsed].skill);
                     }
+
+                    this.io.emit('update', { 'id': player.id, 'activesInfo': player.activesInfo });
                 }
 
                 break;
             }
+        }
+    }
+
+    playSkill(player, skill) {
+        let projData, proj;
+        switch (skill) {
+            case 0:
+                let flashDist = minValue(280, player.mouseDist);
+                player.pos = [player.pos[0] + player.aimDir[0] * flashDist, player.pos[1] + player.aimDir[1] * flashDist];
+                player.posToValidate = true;
+                this.io.emit('update', { 'id': player.id, 'pos': player.pos, 'posToValidate': player.posToValidate });
+                break;
+            case 1:
+                player.addSlowEffect(0.2, 0.3);
+                let wait = new WaitEffect(new FastEffect(2, 1.3), 0.3);
+                player.waitEffects.push(wait);
+                break;
+            case 2:
+                projData = {
+                    'id': this.getNewUniqueId(),
+                    'color': [0, 0, 0],
+                    'speed': 500,
+                    'maxRange': 750,
+                    'radius': 80,
+                    'type': 1,
+                    'collidesWithWall': false,
+                    'pos': [player.pos[0] + player.aimDir[0] * player.radius, player.pos[1] + player.aimDir[1] * player.radius],
+                    'dir': [player.aimDir[0], player.aimDir[1]],
+                }
+                proj = this.buildProjectile(player.id, projData);
+
+                proj.effects.push(new StunEffect(1.4));
+
+                this.addProjectile(proj);
+                this.io.emit('newprojectile', projData);
+                break;
+            case 3:
+                player.reflecting += consts.SKILL_ZITORSHIELD_DURATION;
+                this.io.emit('update', { 'id': player.id, 'reflecting': player.reflecting });
+                break;
+            case 4:
+                player.becomeInvisible(2.5);
+                break;
+            case 5:
+                player.imaterial = 1.5;
+                player.wasImaterial = true;
+
+                this.io.emit('update', { 'id': player.id, 'imaterial': player.imaterial });
+                break;
+            case 6:
+                let amount = 7;
+                for (let i = 0; i < amount; i++) {
+                    let aimAngle = angleFromX(player.aimDir);
+                    let projAngle = aimAngle + mapValue(i, 0, amount - 1, -Math.PI / 5, Math.PI / 5);
+                    let projDir = [Math.cos(projAngle), -Math.sin(projAngle)];
+                    projData = {
+                        'id': this.getNewUniqueId(),
+                        'color': [127, 255, 127],
+                        'speed': 800,
+                        'maxRange': 450,
+                        'radius': 8,
+                        'type': 1,
+                        'pos': [player.pos[0] + player.aimDir[0] * player.radius, player.pos[1] + player.aimDir[1] * player.radius],
+                        'dir': projDir,
+                    }
+                    proj = this.buildProjectile(player.id, projData);
+
+                    proj.effects.push(new ProjPush(proj, 2000, 0.2));
+
+                    this.addProjectile(proj);
+                    this.io.emit('newprojectile', projData);
+                }
+                break;
+            case 7:
+                projData = {
+                    'id': this.getNewUniqueId(),
+                    'color': [0, 127, 127],
+                    'speed': 1400,
+                    'maxRange': 600,
+                    'radius': 20,
+                    'type': 1,
+                    'pos': [player.pos[0] + player.aimDir[0] * player.radius, player.pos[1] + player.aimDir[1] * player.radius],
+                    'dir': [player.aimDir[0], player.aimDir[1]],
+                }
+                proj = this.buildProjectile(player.id, projData);
+
+                proj.effects.push(new ProjPull(proj, 1500));
+
+                this.addProjectile(proj);
+                this.io.emit('newprojectile', projData);
+                break;
+            case 8:
+                player.startAreaHealing(consts.SKILL_HEALAREA_DURATION);
+                break;
+            case 9:
+                let dashDistance = minValue(500, player.mouseDist);
+                let dashSpeed = 3000;
+                player.takeForce(player.aimDir, dashSpeed, dashDistance / dashSpeed);
+                break;
+            case 10:
+                for (let i = 0; i < this.projectiles.length; i++) {
+                    proj = this.projectiles[i];
+                    if (proj.owner.id == player.id) {
+                        proj.active = false;
+                        proj.playersHit = [];
+
+                        this.io.emit('newexplosion', {
+                            'pos': proj.pos,
+                            'radius': proj.radius + consts.SKILL_EXPLODEARROW_RADIUS,
+                            'color': proj.color
+                        });
+
+                        for (let j = 0; j < this.players.length; j++) {
+                            let plr = this.players[j];
+                            if (plr.active && plr.id != proj.owner.id) {
+                                let minDist = plr.radius + proj.radius + consts.SKILL_EXPLODEARROW_RADIUS;
+                                if (distVectorSqr(plr.pos, proj.pos) < minDist * minDist) {
+                                    proj.hit(plr);
+                                }
+                            }
+                        }
+                    }
+                }
+                break;
+            case 11:
+                let lavaDist = minValue(500, player.mouseDist);
+                let lavaData = {
+                    'id': this.getNewUniqueId(),
+                    'duration': 3,
+                    'damage': 50,
+                    'radius': 100,
+                    'pos': [player.pos[0] + player.aimDir[0] * lavaDist, player.pos[1] + player.aimDir[1] * lavaDist]
+                }
+                let lavaPool = this.buildLavaPool(player, lavaData);
+                this.addLavaPool(lavaPool);
+                break;
+            case 12:
+                projData = {
+                    'id': this.getNewUniqueId(),
+                    'color': [255, 127, 127],
+                    'speed': 800,
+                    'maxRange': minValue(600, player.mouseDist) - player.radius,
+                    'radius': 30,
+                    'pierces': true,
+                    'collidesWithWall': false,
+                    'type': 1,
+                    'pos': [player.pos[0] + player.aimDir[0] * player.radius, player.pos[1] + player.aimDir[1] * player.radius],
+                    'dir': [player.aimDir[0], player.aimDir[1]],
+                }
+                proj = this.buildProjectile(player.id, projData);
+
+                proj.onDeath = new AreaPush(proj, this.players, 325, 1300, this.io);
+
+                this.addProjectile(proj);
+                this.io.emit('newprojectile', projData);
+                break;
+            case 13:
+                projData = {
+                    'id': this.getNewUniqueId(),
+                    'color': [0, 0, 255],
+                    'speed': 1200,
+                    'maxRange': 600,
+                    'radius': 15,
+                    'type': 1,
+                    'pos': [player.pos[0] + player.aimDir[0] * player.radius, player.pos[1] + player.aimDir[1] * player.radius],
+                    'dir': [player.aimDir[0], player.aimDir[1]],
+                }
+                proj = this.buildProjectile(player.id, projData);
+                proj.effects.push(new PinProj(proj, 3));
+
+                this.addProjectile(proj);
+                this.io.emit('newprojectile', projData);
+                break;
+            default:
+                break;
         }
     }
 
@@ -1309,6 +1341,7 @@ class ServerPlayer extends Player {
         this.deltaLife = 0;
         this.dotTimer = 0;
         this.lastHitBy = this;
+        this.lastSkillUsed = null;
     }
 
     attack(deltaTime) {
@@ -1339,6 +1372,7 @@ class ServerPlayer extends Player {
             this.updateFastEffects(deltaTime);
             this.updateWaitEffects(deltaTime);
             this.updateInvisibility(deltaTime);
+            this.checkPinned();
 
             if (this.areaHealing > 0) {
                 this.applyAreaHeal(deltaTime);
@@ -1350,7 +1384,7 @@ class ServerPlayer extends Player {
 
             this.resolveDot(deltaTime);
 
-            if(this.collidedWith != null){
+            if (this.collidedWith != null) {
                 this.lastHitBy = this.collidedWith;
                 this.collidedWith = null;
             }
@@ -1452,6 +1486,23 @@ class ServerPlayer extends Player {
         }
     }
 
+    checkPinned() {
+        if (this.pinned > 0) {
+            if (distVectorSqr(this.pos, this.pinPos) > this.pinRadius * this.pinRadius) {
+                this.pinned = 0;
+                this.takeStun(2.5);
+
+                this.messages.push({
+                    'type': 'update',
+                    'data': {
+                        'id': this.id,
+                        'pinned': this.pinned
+                    }
+                });
+            }
+        }
+    }
+
     addSlowEffect(value, duration) {
         this.slowEffects.push({ 'value': value, 'duration': duration });
         this.sortSlowEffects();
@@ -1541,14 +1592,16 @@ class ServerPlayer extends Player {
                 });
                 this.game.announce(source.nickname + ' eliminou ' + this.nickname);
 
-                if(this.game.hasPassive(9, source.build.passives)){
+                if (this.game.hasPassive(9, source.build.passives)) {
                     source.speedMultiplier += 0.035;
                     source.attackSpeedMultiplier += 0.035;
                     this.messages.push({
                         'type': 'update',
-                        'data': { 'id': source.id, 
-                        'speedMultiplier': source.speedMultiplier, 
-                        'attackSpeedMultiplier':source.attackSpeedMultiplier }
+                        'data': {
+                            'id': source.id,
+                            'speedMultiplier': source.speedMultiplier,
+                            'attackSpeedMultiplier': source.attackSpeedMultiplier
+                        }
                     });
                 }
             }
@@ -1613,6 +1666,19 @@ class ServerPlayer extends Player {
             'data': {
                 'id': this.id,
                 'areaHealing': this.areaHealing
+            }
+        });
+    }
+
+    getPinned(pos, duration) {
+        this.pinPos = pos;
+        this.pinned = duration;
+        this.messages.push({
+            'type': 'update',
+            'data': {
+                'id': this.id,
+                'pinPos': this.pinPos,
+                'pinned': this.pinned,
             }
         });
     }

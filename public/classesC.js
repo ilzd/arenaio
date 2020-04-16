@@ -47,6 +47,9 @@ class Player extends GameObject {
         this.repulses = false;
         this.areaDamage = false;
         this.collidedWith = null;
+        this.pinned = 0;
+        this.pinPos = [0, 0];
+        this.pinRadius = 250;
     }
 
     fixAimDir() {
@@ -110,6 +113,7 @@ class Player extends GameObject {
         this.imaterial = maxValue(0, this.imaterial - deltaTime);
         this.forced = maxValue(0, this.forced - deltaTime);
         this.areaHealing = maxValue(0, this.areaHealing - deltaTime);
+        this.pinned = maxValue(0, this.pinned - deltaTime);
     }
 
     updateColdowns(deltaTime) {
@@ -346,8 +350,11 @@ class Game {
                             case 11: //lava pool
                                 coldown = 11;
                                 break;
-                            case 12: //lava pool
+                            case 12: //kinect nade
                                 coldown = 7.5;
+                                break;
+                            case 13: //pin proj
+                                coldown = 8;
                                 break;
                             default:
                                 break;

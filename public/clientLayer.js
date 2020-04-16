@@ -533,6 +533,13 @@ class ClientPlayer extends Player {
 
         if (!isReference && this.invisible) return;
 
+        if(this.pinned > 0){
+            stroke(0, 0, 255);
+            strokeWeight(4);
+            line(this.pos[0], this.pos[1], this.pinPos[0], this.pinPos[1]);
+            ellipse(this.pinPos[0], this.pinPos[1], (this.pinRadius - this.radius) * 2, (this.pinRadius - this.radius) * 2);
+        }
+
         if (this.areaHealing > 0) {
             stroke(255, 255, 0);
             strokeWeight(5);
@@ -595,14 +602,14 @@ class ClientPlayer extends Player {
         rect(this.pos[0] - this.radius, this.pos[1] + this.radius * 1.1, map(this.life, 0, this.maxLife * this.maxLifeMultiplier, 0, this.radius * 2), this.radius * 0.35);
         
         stroke(255);
-        strokeWeight(1);
+        strokeWeight(2);
         let lifeIndicator = 50;
         while (lifeIndicator < this.maxLife * this.maxLifeMultiplier) {
             let xPos = this.pos[0] - this.radius + map(lifeIndicator, 0, this.maxLife * this.maxLifeMultiplier, 0, this.radius * 2)
             line(xPos,
-                this.pos[1] + this.radius * 1.15,
+                this.pos[1] + this.radius * 1.1,
                 xPos,
-                this.pos[1] + this.radius * 1.35);
+                this.pos[1] + this.radius * 1.2);
             
                 lifeIndicator += 50;
         }
