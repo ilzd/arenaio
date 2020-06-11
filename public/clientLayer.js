@@ -536,6 +536,7 @@ class ClientPlayer extends Player {
         if(this.pinned > 0){
             stroke(0, 0, 255);
             strokeWeight(4);
+            noFill();
             line(this.pos[0], this.pos[1], this.pinPos[0], this.pinPos[1]);
             ellipse(this.pinPos[0], this.pinPos[1], (this.pinRadius - this.radius) * 2, (this.pinRadius - this.radius) * 2);
         }
