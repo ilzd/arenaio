@@ -170,7 +170,7 @@ class ClientGame extends Game {
         stroke(30);
         strokeWeight(4);
         fill(15);
-        for(let i = 0; i < this.holes.length; i++){
+        for (let i = 0; i < this.holes.length; i++) {
             let hole = this.holes[i];
             ellipse(hole.pos[0], hole.pos[1], hole.radius * 2, hole.radius * 2);
         }
@@ -533,7 +533,7 @@ class ClientPlayer extends Player {
 
         if (!isReference && this.invisible) return;
 
-        if(this.pinned > 0){
+        if (this.pinned > 0) {
             stroke(0, 0, 255);
             strokeWeight(4);
             noFill();
@@ -601,7 +601,7 @@ class ClientPlayer extends Player {
         rect(this.pos[0] - this.radius, this.pos[1] + this.radius * 1.1, map(this.prevLife, 0, this.maxLife * this.maxLifeMultiplier, 0, this.radius * 2), this.radius * 0.35);
         fill(255, 0, 0);
         rect(this.pos[0] - this.radius, this.pos[1] + this.radius * 1.1, map(this.life, 0, this.maxLife * this.maxLifeMultiplier, 0, this.radius * 2), this.radius * 0.35);
-        
+
         stroke(255);
         strokeWeight(2);
         let lifeIndicator = 50;
@@ -611,8 +611,8 @@ class ClientPlayer extends Player {
                 this.pos[1] + this.radius * 1.1,
                 xPos,
                 this.pos[1] + this.radius * 1.2);
-            
-                lifeIndicator += 50;
+
+            lifeIndicator += 50;
         }
 
         this.drawEffects();
@@ -635,27 +635,27 @@ class ClientPlayer extends Player {
         pop();
     }
 
-    drawEffects(){
+    drawEffects() {
         let effectCount = 0;
         let iconSize = this.radius / 3;
         stroke(0);
         strokeWeight(1);
-        if(this.slow < 1){
+        if (this.slow < 1) {
             fill(153, 190, 255);
             rect(this.pos[0] - this.radius + (iconSize * effectCount), this.pos[1] + this.radius * 1.5, iconSize, iconSize);
             effectCount++;
         }
-        if(this.fast > 1){
+        if (this.fast > 1) {
             fill(50, 255, 50);
             rect(this.pos[0] - this.radius + (iconSize * effectCount), this.pos[1] + this.radius * 1.5, iconSize, iconSize);
             effectCount++;
         }
-        if(this.stunned > 0){
+        if (this.stunned > 0) {
             fill(0);
             rect(this.pos[0] - this.radius + (iconSize * effectCount), this.pos[1] + this.radius * 1.5, iconSize, iconSize);
             effectCount++;
         }
-        if(this.silenced > 0){
+        if (this.silenced > 0) {
             fill(255);
             rect(this.pos[0] - this.radius + (iconSize * effectCount), this.pos[1] + this.radius * 1.5, iconSize, iconSize);
             effectCount++;
