@@ -17,7 +17,7 @@ server.on('listening', function () {
 
 const io = require('socket.io')(server);
 
-io.sockets.on(
+io.on(
     'connection', function (socket) {
         console.log('client connected: ' + socket.id);
 
